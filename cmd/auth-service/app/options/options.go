@@ -1,12 +1,14 @@
 package options
 
-import "github.com/spf13/pflag"
+import (
+	"github.com/spf13/pflag"
+)
 
 // Options has all the params needed to run auth-service
 type Options struct {
 	PrintVersion bool
 
-	// ConfigFile is the location of the scheduler server's configuration file.
+	// ConfigFile is the location of the auth server's configuration file.
 	ConfigFile string
 }
 
