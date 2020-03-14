@@ -13,31 +13,16 @@ type redisConn struct {
 	serializer securecookie.Serializer
 }
 
-func dial(network, address, password string) (redis.Conn, error) {
-	c, err := redis.Dial(network, address)
-	if err != nil {
-		return nil, err
-	}
+func dial(address, password string, db int) (redis.Conn, error) {
+	var opts []redis.DialOption
 	if password != "" {
-		if _, err := c.Do("AUTH", password); err != nil {
-			c.Close()
-			return nil, err
-		}
+		opts = append(opts, redis.DialPassword(password))
 	}
-	return c, err
-}
-
-func dialWithDB(network, address, password string, db int) (redis.Conn, error) {
-	c, err := dial(network, address, password)
-	if err != nil || db == 0 {
-		return c, err
+	if db != 0 {
+		opts = append(opts, redis.DialDatabase(db))
 	}
 
-	if _, err := c.Do("SELECT", db); err != nil {
-		c.Close()
-		return nil, err
-	}
-	return c, err
+	return redis.Dial("tcp", address, opts...)
 }
 
 func (c *redisConn) Close() error {

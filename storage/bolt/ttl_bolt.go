@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *boltConn) startExpireTask(ctx context.Context, frequency time.Duration) {
+func (c *boltConn) startSweeping(ctx context.Context, frequency time.Duration) {
 	go func() {
 		for {
 			select {
@@ -21,7 +21,6 @@ func (c *boltConn) startExpireTask(ctx context.Context, frequency time.Duration)
 			}
 		}
 	}()
-
 }
 
 func (c *boltConn) sweep(maxAge time.Duration) error {

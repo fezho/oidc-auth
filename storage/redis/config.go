@@ -8,33 +8,36 @@ import (
 
 // Redis config for connecting to redis server.
 type Config struct {
-	// The network type, either tcp or unix.
-	// Default is tcp.
-	Network string
 	// The host:port address of redis server.
 	Address string
 	// Optional password. Must match the password specified in the
 	// require pass server configuration option.
 	Password string
 	// Database to be selected after connecting to the server.
-	DB        int
+	DB int
+	// key prefix for storing session
 	KeyPrefix string
-	// Maximum number of idle connections in the pool.
-	MaxIdle int
-	// Close connections after remaining idle for this duration. If the value
-	// is zero, then idle connections are not closed. Applications should set
-	// the timeout to a value less than the server's timeout.
-	IdleTimeout time.Duration
 
-	// TODO: tls.Config
+	*storage.SessionConfig `json:",inline"`
+
+	// TODO: add timeout and tls.SessionConfig
 }
 
-func (r *Config) Open(config *storage.Config) (*storage.Storage, error) {
+func init() {
+	storage.AddConfigBuilder(storage.REDIS, func() storage.Config { return new(Config) })
+}
+
+func (c *Config) Open() (*storage.Storage, error) {
+	err := c.SessionConfig.Unmarshal()
+	if err != nil {
+		return nil, err
+	}
+
 	pool := &redis.Pool{
-		MaxIdle:     r.MaxIdle,
-		IdleTimeout: r.IdleTimeout,
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			return dialWithDB(r.Network, r.Address, r.Password, r.DB)
+			return dial(c.Address, c.Password, c.DB)
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
@@ -44,9 +47,9 @@ func (r *Config) Open(config *storage.Config) (*storage.Storage, error) {
 
 	redisConn := &redisConn{
 		Pool:       pool,
-		keyPrefix:  r.KeyPrefix,
-		serializer: config.Serializer,
+		keyPrefix:  c.KeyPrefix,
+		serializer: c.Serializer,
 	}
 
-	return storage.New(redisConn, config), nil
+	return storage.New(redisConn, c.SessionConfig), nil
 }

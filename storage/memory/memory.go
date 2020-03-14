@@ -9,15 +9,25 @@ import (
 )
 
 type Config struct {
-	// The in memory implementation has no config.
+	// The in-memory implementation has no config.
+	*storage.SessionConfig `json:",inline"`
 }
 
-func (r *Config) Open(config *storage.Config) (*storage.Storage, error) {
+func init() {
+	storage.AddConfigBuilder(storage.MEMORY, func() storage.Config { return new(Config) })
+}
+
+func (c *Config) Open() (*storage.Storage, error) {
+	err := c.SessionConfig.Unmarshal()
+	if err != nil {
+		return nil, err
+	}
+
 	conn := &memoryConn{
 		sessions:   make(map[string]valueType),
-		serializer: config.Serializer,
+		serializer: c.Serializer,
 	}
-	return storage.New(conn, config), nil
+	return storage.New(conn, c.SessionConfig), nil
 }
 
 type memoryConn struct {
@@ -55,7 +65,7 @@ func (m memoryConn) Save(session *sessions.Session) error {
 
 	value := valueType{
 		data: data,
-		ttl:  time.Now().Unix() + int64(session.Options.MaxAge),
+		ttl:  time.Now().UTC().Unix() + int64(session.Options.MaxAge),
 	}
 	m.sessions[session.ID] = value
 
@@ -75,5 +85,5 @@ func (m *memoryConn) Close() error {
 }
 
 func isExpired(ttl int64) bool {
-	return ttl > 0 && ttl <= time.Now().Unix()
+	return ttl > 0 && ttl <= time.Now().UTC().Unix()
 }

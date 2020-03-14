@@ -8,13 +8,18 @@ import (
 	"strings"
 )
 
-// Storage is a base storage for custom session stores.
+// Storage is a custom session store which provides an abstraction of
+// common session store operations for multiple Key/Value databases.
 type Storage struct {
-	conn    Conn
-	Codecs  []securecookie.Codec
-	Options *sessions.Options
+	// conn is the underlying db to do load/save/delete operations
+	conn Conn
+	// codecs encode&decode session to/from cookie, it also checks MaxAge in `DecodeMulti` method
+	codecs []securecookie.Codec
+	// options stores configuration for a session
+	options *sessions.Options
 }
 
+// Conn is the interface for underlying persistent database
 type Conn interface {
 	// Load reads the session from the database.
 	// returns true if there is a session data in DB
@@ -27,29 +32,17 @@ type Conn interface {
 	Close() error
 }
 
-// Config is the basic storage options
-type Config struct {
-	Serializer securecookie.Serializer
-	// Session Max-Age attribute present and given in seconds.
-	MaxAge int
-	// KeyPairs are used to generate securecookie.Codec,
-	// Should not change them after application is started,
-	// otherwise previously issued cookies will not be able to be decoded.
-	// Can be created using securecookie.GenerateRandomKey()
-	KeyPairs [][]byte
-}
-
-func New(conn Conn, config *Config) *Storage {
+func New(conn Conn, config *SessionConfig) *Storage {
 	s := &Storage{
-		Codecs: securecookie.CodecsFromPairs(config.KeyPairs...),
-		Options: &sessions.Options{
+		codecs: securecookie.CodecsFromPairs(config.KeyPairs...),
+		options: &sessions.Options{
 			Path:   "/",
 			MaxAge: config.MaxAge,
 		},
 		conn: conn,
 	}
 
-	s.MaxAge(s.Options.MaxAge)
+	s.MaxAge(s.options.MaxAge)
 	return s
 }
 
@@ -59,7 +52,7 @@ func New(conn Conn, config *Config) *Storage {
 // the session to check if it is an existing session or a new one.
 //
 // It returns a new session and an error if the session exists but could
-// not be decoded.
+// not be decoded or be expired.
 func (s *Storage) Get(r *http.Request, name string) (*sessions.Session, error) {
 	return sessions.GetRegistry(r).Get(s, name)
 }
@@ -68,27 +61,28 @@ func (s *Storage) Get(r *http.Request, name string) (*sessions.Session, error) {
 //
 // The difference between New() and Get() is that calling New() twice will
 // decode the session data twice, while Get() registers and reuses the same
-// decoded session after the first call.
+// decoded session after the first call. Get() calls New() internally if
+// there's no data in cache.
 func (s *Storage) New(r *http.Request, name string) (*sessions.Session, error) {
 	session := sessions.NewSession(s, name)
-	opts := *s.Options
+	opts := *s.options
 	session.Options = &opts
 	session.IsNew = true
 	var err error
 	if c, errCookie := r.Cookie(name); errCookie == nil {
-		err = securecookie.DecodeMulti(name, c.Value, &session.ID, s.Codecs...)
+		err = securecookie.DecodeMulti(name, c.Value, &session.ID, s.codecs...)
 		if err == nil {
 			ok, err := s.conn.Load(session)
-			// TODO: !ok is enough
 			session.IsNew = !(err == nil && ok) // not new if no error and data available
 		}
 	}
 	return session, err
 }
 
-// Save adds a single session to the response.
+// Save saves a single session to the underlying database
+// and save the encoded session id to cookie of the response.
 //
-// If the Options.MaxAge of the session is <= 0 then the session will be
+// If the options.MaxAge of the session is <= 0 then the session will be
 // deleted from the store path. With this process it enforces the properly
 // session cookie handling so no need to trust in the cookie management in the
 // web browser.
@@ -111,7 +105,7 @@ func (s *Storage) Save(r *http.Request, w http.ResponseWriter, session *sessions
 	if err := s.conn.Save(session); err != nil {
 		return err
 	}
-	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, s.Codecs...)
+	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, s.codecs...)
 	if err != nil {
 		return err
 	}
@@ -120,13 +114,13 @@ func (s *Storage) Save(r *http.Request, w http.ResponseWriter, session *sessions
 }
 
 // MaxAge sets the maximum age for the store and the underlying cookie
-// implementation. Individual sessions can be deleted by setting Options.MaxAge
+// implementation. Individual sessions can be deleted by setting options.MaxAge
 // = -1 for that session.
 func (s *Storage) MaxAge(age int) {
-	s.Options.MaxAge = age
+	s.options.MaxAge = age
 
 	// Set the maxAge for each securecookie instance.
-	for _, codec := range s.Codecs {
+	for _, codec := range s.codecs {
 		if sc, ok := codec.(*securecookie.SecureCookie); ok {
 			sc.MaxAge(age)
 		}

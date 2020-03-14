@@ -13,12 +13,25 @@ type Config struct {
 	Path string
 	// BucketName represents the name of the bucket which contains sessions.
 	BucketName string
-	// SweepFrequency is the frequency of task for sweeping expired sessions
-	// Default value is 30 seconds
+
+	// SweepFrequency is the frequency for running task to sweep expired sessions,
+	// if it's zero or less, means do not running sweep task.
 	SweepFrequency time.Duration
+
+	// TODO: need point?
+	*storage.SessionConfig `json:",inline"`
 }
 
-func (c *Config) Open(config *storage.Config) (*storage.Storage, error) {
+func init() {
+	storage.AddConfigBuilder(storage.BOLT, func() storage.Config { return new(Config) })
+}
+
+func (c *Config) Open() (*storage.Storage, error) {
+	err := c.SessionConfig.Unmarshal()
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := bolt.Open(c.Path, 0666, nil)
 	if err != nil {
 		return nil, err
@@ -52,11 +65,14 @@ func (c *Config) Open(config *storage.Config) (*storage.Storage, error) {
 		db:            db,
 		bucketName:    bucket,
 		ttlBucketName: ttlBucket,
-		serializer:    config.Serializer,
+		serializer:    c.Serializer,
 		cancel:        cancel,
-		maxAge:        time.Second * time.Duration(config.MaxAge),
+		maxAge:        time.Second * time.Duration(c.MaxAge),
 	}
-	conn.startExpireTask(ctx, c.SweepFrequency)
 
-	return storage.New(conn, config), nil
+	if c.SweepFrequency > 0 {
+		conn.startSweeping(ctx, c.SweepFrequency)
+	}
+
+	return storage.New(conn, c.SessionConfig), nil
 }

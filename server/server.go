@@ -7,10 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
-	"net/http"
-
-	//log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+	"net/http"
+	//log "github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -18,8 +17,6 @@ type Config struct {
 	IssuerURL string
 	// Callback URL for OAuth2 responses
 	RedirectURI string // uri or url
-
-	StaticDestinationURL string
 
 	// OAuth2 client ID of this application
 	ClientID string
@@ -31,8 +28,6 @@ type Config struct {
 
 	// whitelist uri list for skipping auth
 	AuthWhitelistURI []string
-
-	StorePath string
 
 	SessionMaxAgeSeconds int
 
@@ -82,7 +77,6 @@ func NewServer(config *Config, store sessions.Store) (*Server, error) {
 			Scopes:       oidcScopes,
 		},
 		store:                store,
-		staticDestination:    config.StaticDestinationURL,
 		sessionMaxAgeSeconds: config.SessionMaxAgeSeconds,
 		userIDOpts:           config.UserIDOpts,
 	}
@@ -91,8 +85,11 @@ func NewServer(config *Config, store sessions.Store) (*Server, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/login", s.callback).Methods(http.MethodGet)
 	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)
-	router.PathPrefix("/").HandlerFunc(s.authenticate) // TODO: use authentication middleware https://github.com/gorilla/mux#middleware
-	//router.PathPrefix("/api").Subrouter().Use()
+	// "aip"?
+	router.PathPrefix("/").Subrouter().Use(s.authMiddleware())
+
+	// TODO: add session detail and refresh token api
+	// https://github.com/Etiennera/go-ad-oidc/blob/741d9d275aa92d8e1243b68975dae36874b48026/activeDirectory_private.go#L101
 
 	// set whitelist
 	if len(config.AuthWhitelistURI) > 0 {

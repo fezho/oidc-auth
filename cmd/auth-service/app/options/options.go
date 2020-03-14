@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Options has all the params needed to run auth-service
+// options has all the params needed to run auth-service
 type Options struct {
 	PrintVersion bool
 

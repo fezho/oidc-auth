@@ -60,11 +60,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 		return err
 	}
 
-	storageConfig, err := config.ToStorageConfig(c.Storage.Session)
-	if err != nil {
-		return err
-	}
-	storage, err := c.Storage.Config.Open(storageConfig)
+	storage, err := c.Storage.Config.Open()
 	if err != nil {
 		return fmt.Errorf("failed to open session storage: %v", err)
 	}
