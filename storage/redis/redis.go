@@ -1,8 +1,8 @@
 package redis
 
 import (
+	"github.com/fezho/oidc-auth-service/storage/internal"
 	"github.com/gomodule/redigo/redis"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 )
 
@@ -10,7 +10,6 @@ import (
 type redisConn struct {
 	Pool       *redis.Pool
 	keyPrefix  string
-	serializer securecookie.Serializer
 }
 
 func dial(address, password string, db int) (redis.Conn, error) {
@@ -34,7 +33,7 @@ func (c *redisConn) getKey(sessionID string) string {
 }
 
 func (c *redisConn) Save(session *sessions.Session) error {
-	data, err := c.serializer.Serialize(session.Values)
+	data, err := internal.Encode(session)
 	if err != nil {
 		return err
 	}
@@ -64,7 +63,7 @@ func (c *redisConn) Load(session *sessions.Session) (bool, error) {
 		return false, err
 	}
 
-	return true, c.serializer.Deserialize(b, &session.Values)
+	return true, internal.Decode(b, session)
 }
 
 func (c *redisConn) Delete(session *sessions.Session) error {

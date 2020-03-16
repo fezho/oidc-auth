@@ -6,7 +6,7 @@ import (
 )
 
 func TestMemoryStorage(t *testing.T) {
-	cfg := &Config{SessionConfig: testutils.MockSessionConfig("gob")}
+	cfg := &Config{SessionConfig: testutils.MockSessionConfig()}
 	s, err := cfg.Open()
 	if err != nil {
 		t.Fatal("failed to open memory storage", err)

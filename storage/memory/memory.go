@@ -2,7 +2,7 @@ package memory
 
 import (
 	"github.com/fezho/oidc-auth-service/storage"
-	"github.com/gorilla/securecookie"
+	"github.com/fezho/oidc-auth-service/storage/internal"
 	"github.com/gorilla/sessions"
 	"sync"
 	"time"
@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	// The in-memory implementation has no config.
-	*storage.SessionConfig `json:",inline"`
+	storage.SessionConfig `json:",inline"`
 }
 
 func init() {
@@ -18,23 +18,23 @@ func init() {
 }
 
 func (c *Config) Open() (*storage.Storage, error) {
-	err := c.SessionConfig.Unmarshal()
-	if err != nil {
-		return nil, err
-	}
-
 	conn := &memoryConn{
-		sessions:   make(map[string]valueType),
-		serializer: c.Serializer,
+		sessions: make(map[string]valueType),
 	}
 	return storage.New(conn, c.SessionConfig), nil
+}
+
+// New initiate a memory storage, for test only
+func New() *storage.Storage {
+	cfg := Config{}
+	s, _ := cfg.Open()
+	return s
 }
 
 type memoryConn struct {
 	mu sync.RWMutex
 
-	sessions   map[string]valueType
-	serializer securecookie.Serializer
+	sessions map[string]valueType
 }
 
 type valueType struct {
@@ -51,14 +51,14 @@ func (m *memoryConn) Load(session *sessions.Session) (bool, error) {
 		return false, nil
 	}
 
-	return true, m.serializer.Deserialize(value.data, &session.Values)
+	return true, internal.Decode(value.data, session)
 }
 
 func (m memoryConn) Save(session *sessions.Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	data, err := m.serializer.Serialize(session.Values)
+	data, err := internal.Encode(session)
 	if err != nil {
 		return err
 	}

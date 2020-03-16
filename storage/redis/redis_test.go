@@ -10,7 +10,7 @@ func TestRedisStorage(t *testing.T) {
 		Address: "127.0.0.1:6379",
 		//Password:      "",
 		KeyPrefix:     "session",
-		SessionConfig: testutils.MockSessionConfig("gob"),
+		SessionConfig: testutils.MockSessionConfig(),
 	}
 	s, err := cfg.Open()
 	if err != nil {

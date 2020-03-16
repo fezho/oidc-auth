@@ -3,7 +3,7 @@ package bolt
 import (
 	"context"
 	"github.com/boltdb/bolt"
-	"github.com/gorilla/securecookie"
+	"github.com/fezho/oidc-auth-service/storage/internal"
 	"github.com/gorilla/sessions"
 	"time"
 )
@@ -15,7 +15,6 @@ type boltConn struct {
 	ttlBucketName []byte
 
 	maxAge     time.Duration
-	serializer securecookie.Serializer
 
 	// This is called once the Close method is called to signal goroutines
 	cancel context.CancelFunc
@@ -27,7 +26,7 @@ func (c *boltConn) Close() error {
 }
 
 func (c *boltConn) Save(session *sessions.Session) error {
-	data, err := c.serializer.Serialize(session.Values)
+	data, err := internal.Encode(session)
 	if err != nil {
 		return err
 	}
@@ -50,7 +49,7 @@ func (c *boltConn) Load(session *sessions.Session) (exists bool, err error) {
 			return nil
 		}
 
-		err := c.serializer.Deserialize(data, &session.Values)
+		err := internal.Decode(data, session)
 		if err != nil {
 			return err
 		}

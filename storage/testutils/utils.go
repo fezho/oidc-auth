@@ -200,12 +200,11 @@ func RunTestMaxAge(t *testing.T, s *storage.Storage) {
 	})
 }
 
-func MockSessionConfig(serializer string) *storage.SessionConfig {
+func MockSessionConfig() storage.SessionConfig {
 	key1 := string(securecookie.GenerateRandomKey(32))
 	key2 := string(securecookie.GenerateRandomKey(32))
-	return &storage.SessionConfig{
-		SerializerStr: serializer,
-		KeyPairStrs:   []string{key1, key2},
-		MaxAge:        10000,
+	return storage.SessionConfig{
+		KeyPairs: []string{key1, key2},
+		MaxAge:   1000,
 	}
 }

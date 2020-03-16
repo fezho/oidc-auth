@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/base32"
+	"github.com/fezho/oidc-auth-service/storage/internal"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -32,12 +33,19 @@ type Conn interface {
 	Close() error
 }
 
-func New(conn Conn, config *SessionConfig) *Storage {
+var defaultSessionMaxAge = 1800
+
+func New(conn Conn, config SessionConfig) *Storage {
+	maxAge := config.MaxAge
+	if config.MaxAge <= 0 {
+		maxAge = defaultSessionMaxAge
+	}
+
 	s := &Storage{
-		codecs: securecookie.CodecsFromPairs(config.KeyPairs...),
+		codecs: internal.CodecsFromPairs(config.KeyPairs),
 		options: &sessions.Options{
 			Path:   "/",
-			MaxAge: config.MaxAge,
+			MaxAge: maxAge,
 		},
 		conn: conn,
 	}

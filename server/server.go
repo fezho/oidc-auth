@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"github.com/coreos/go-oidc"
+	"github.com/fezho/oidc-auth-service/dex"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -15,8 +16,10 @@ import (
 type Config struct {
 	// URL of the OpenID Connect issuer
 	IssuerURL string
-	// Callback URL for OAuth2 responses
-	RedirectURI string // uri or url
+	// gRPC endpoint of dex server
+	RPCEndpoint string
+	// address of current web server
+	Address string
 
 	// OAuth2 client ID of this application
 	ClientID string
@@ -26,26 +29,27 @@ type Config struct {
 	// Scope specifies optional requested permissions
 	Scopes []string
 
-	// whitelist uri list for skipping auth
-	AuthWhitelistURI []string
-
-	SessionMaxAgeSeconds int
+	// uri whitelist for skipping auth
+	URIWhitelist []string
 
 	UserIDOpts UserIDOpts
 
-	// List of allowed origins for CORS requests on discovery, token and keys endpoint.
-	// If none are indicated, CORS requests are disabled. Passing in "*" will allow any
-	// domain.
+	// backend session store
+	Store sessions.Store
+
+	// CORS allowed origins
 	AllowedOrigins []string
 }
 
 type Server struct {
 	provider             *oidc.Provider
-	oauth2Config         *oauth2.Config
+	dexy                 *dex.Dexy
 	store                sessions.Store
+	oauth2Config         *oauth2.Config
 	staticDestination    string
 	sessionMaxAgeSeconds int
 	userIDOpts           UserIDOpts
+	redirectURL          string
 
 	mux http.Handler
 }
@@ -57,7 +61,9 @@ type UserIDOpts struct {
 	Claim       string
 }
 
-func NewServer(config *Config, store sessions.Store) (*Server, error) {
+var callbackPath = "/login"
+
+func NewServer(config Config) (*Server, error) {
 	// OIDC Discovery
 	// TODO: retry with backoff
 	provider, err := oidc.NewProvider(context.Background(), config.IssuerURL)
@@ -65,35 +71,53 @@ func NewServer(config *Config, store sessions.Store) (*Server, error) {
 		return nil, errors.Errorf("failed to setup oidc provider %q: %v", config.IssuerURL, err)
 	}
 
+	dexy, err := dex.New(config.RPCEndpoint)
+	if err != nil {
+		return nil, errors.Errorf("failed to create dex grpc client: %v", err)
+	}
+
 	oidcScopes := append(config.Scopes, oidc.ScopeOpenID)
 
 	s := &Server{
-		provider: provider,
+		provider:    provider,
+		dexy:        dexy,
+		redirectURL: config.Address + callbackPath,
 		oauth2Config: &oauth2.Config{
-			ClientID:     config.ClientSecret,
+			ClientID:     config.ClientID,
 			ClientSecret: config.ClientSecret,
 			Endpoint:     provider.Endpoint(),
-			RedirectURL:  config.RedirectURI,
+			RedirectURL:  config.Address + callbackPath,
 			Scopes:       oidcScopes,
 		},
-		store:                store,
-		sessionMaxAgeSeconds: config.SessionMaxAgeSeconds,
-		userIDOpts:           config.UserIDOpts,
+		store:      config.Store,
+		userIDOpts: config.UserIDOpts,
 	}
 
 	// register handlers
 	router := mux.NewRouter()
-	router.HandleFunc("/login", s.callback).Methods(http.MethodGet)
+	// Authorization redirect callback from OAuth2 auth flow.
+	router.HandleFunc(callbackPath, s.callback).Methods(http.MethodGet)
 	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)
-	// "aip"?
-	router.PathPrefix("/").Subrouter().Use(s.authMiddleware())
+
+	router.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		// do something
+	})
+	router.Use(s.authMiddleware())
+
+	//authRouter := router.PathPrefix("/api").Subrouter()
+	//authRouter.Use(s.authMiddleware())
+	//authRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//	// Do something here
+	//	fmt.Println("okay")
+	//})
 
 	// TODO: add session detail and refresh token api
 	// https://github.com/Etiennera/go-ad-oidc/blob/741d9d275aa92d8e1243b68975dae36874b48026/activeDirectory_private.go#L101
+	// https://developers.onelogin.com/openid-connect/api/refresh-session
 
 	// set whitelist
-	if len(config.AuthWhitelistURI) > 0 {
-		router.Use(whitelistMiddleware(config.AuthWhitelistURI))
+	if len(config.URIWhitelist) > 0 {
+		router.Use(whitelistMiddleware(config.URIWhitelist))
 	}
 
 	// set cors
@@ -108,4 +132,15 @@ func NewServer(config *Config, store sessions.Store) (*Server, error) {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
+}
+
+// TODO: use this func to replace oauth2Config
+func (s *Server) genOauth2Config(r *http.Request) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     "",
+		ClientSecret: "",
+		Endpoint:     oauth2.Endpoint{},
+		RedirectURL:  "",
+		Scopes:       nil,
+	}
 }

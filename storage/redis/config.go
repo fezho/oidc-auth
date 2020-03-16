@@ -18,7 +18,7 @@ type Config struct {
 	// key prefix for storing session
 	KeyPrefix string
 
-	*storage.SessionConfig `json:",inline"`
+	storage.SessionConfig `json:",inline"`
 
 	// TODO: add timeout and tls.SessionConfig
 }
@@ -28,11 +28,6 @@ func init() {
 }
 
 func (c *Config) Open() (*storage.Storage, error) {
-	err := c.SessionConfig.Unmarshal()
-	if err != nil {
-		return nil, err
-	}
-
 	pool := &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -46,9 +41,8 @@ func (c *Config) Open() (*storage.Storage, error) {
 	}
 
 	redisConn := &redisConn{
-		Pool:       pool,
-		keyPrefix:  c.KeyPrefix,
-		serializer: c.Serializer,
+		Pool:      pool,
+		keyPrefix: c.KeyPrefix,
 	}
 
 	return storage.New(redisConn, c.SessionConfig), nil

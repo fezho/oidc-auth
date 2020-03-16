@@ -98,6 +98,12 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) refreshToken(w http.ResponseWriter, r *http.Request) {
+	// 1. same with dex's example-app's MethodPost
+	// 2. do in 	rawIDToken, ok := oauth2Token.Extra("id_token").(string) ... to session.Save
+	// 3. should set some token in response header?
+}
+
 // logout is the handler responsible for revoking the user's session.
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 

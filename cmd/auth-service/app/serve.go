@@ -50,25 +50,48 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 
 	fmt.Println("implement here...")
 
+	// load config, init log and validate config
 	c, err := config.LoadConfigFromFile(opts.ConfigFile)
 	if err != nil {
 		return fmt.Errorf("failed to read config file %s: %v", opts.ConfigFile, err)
 	}
-
 	err = initLogger(c.Logger)
 	if err != nil {
+		return fmt.Errorf("invalid config: %v", err)
+	}
+	if err := c.Validate(); err != nil {
 		return err
 	}
 
+	if c.Logger.Level != "" {
+		log.Infof("config using log level: %s", c.Logger.Level)
+	}
+
+	// initiate session storage
 	storage, err := c.Storage.Config.Open()
 	if err != nil {
 		return fmt.Errorf("failed to open session storage: %v", err)
 	}
 	defer storage.Close()
 
-	// server config
+	serverConfig := server.Config{
+		IssuerURL:    c.OIDC.Issuer,
+		RPCEndpoint:  c.OIDC.RPCEndpoint,
+		Address:      c.Web.HTTP,
+		ClientID:     c.OIDC.ClientID,
+		ClientSecret: c.OIDC.ClientSecret,
+		Scopes:       c.OIDC.Scopes,
+		URIWhitelist: c.OIDC.URIWhitelist,
+		// TODO: set UserIDOpts
+		UserIDOpts:     server.UserIDOpts{},
+		Store:          storage,
+		AllowedOrigins: c.Web.AllowedOrigins,
+	}
+	if serverConfig.Address == "" {
+		serverConfig.Address = c.Web.HTTPS
+	}
 
-	serv, err := server.NewServer(nil, storage)
+	srv, err := server.NewServer(serverConfig)
 	if err != nil {
 		log.Fatal("failed to create auth server, ", err)
 	}
@@ -77,14 +100,14 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	if c.Web.HTTP != "" {
 		log.Infof("listening (http) on %s", c.Web.HTTP)
 		go func() {
-			err := http.ListenAndServe(c.Web.HTTP, serv)
+			err := http.ListenAndServe(c.Web.HTTP, srv)
 			errc <- fmt.Errorf("listening on %s failed: %v", c.Web.HTTP, err)
 		}()
 	}
 	if c.Web.HTTPS != "" {
 		httpsSrv := &http.Server{
 			Addr:    c.Web.HTTPS,
-			Handler: serv,
+			Handler: srv,
 			TLSConfig: &tls.Config{
 				PreferServerCipherSuites: true,
 				MinVersion:               tls.VersionTLS12,

@@ -11,7 +11,7 @@ func TestBoltStorage(t *testing.T) {
 	cfg := &Config{
 		Path:          path,
 		BucketName:    "session",
-		SessionConfig: testutils.MockSessionConfig("gob"),
+		SessionConfig: testutils.MockSessionConfig(),
 	}
 	s, err := cfg.Open()
 	if err != nil {

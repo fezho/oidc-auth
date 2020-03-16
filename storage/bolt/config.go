@@ -18,8 +18,7 @@ type Config struct {
 	// if it's zero or less, means do not running sweep task.
 	SweepFrequency time.Duration
 
-	// TODO: need point?
-	*storage.SessionConfig `json:",inline"`
+	storage.SessionConfig `json:",inline"`
 }
 
 func init() {
@@ -27,11 +26,6 @@ func init() {
 }
 
 func (c *Config) Open() (*storage.Storage, error) {
-	err := c.SessionConfig.Unmarshal()
-	if err != nil {
-		return nil, err
-	}
-
 	db, err := bolt.Open(c.Path, 0666, nil)
 	if err != nil {
 		return nil, err
@@ -60,12 +54,10 @@ func (c *Config) Open() (*storage.Storage, error) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
 	conn := &boltConn{
 		db:            db,
 		bucketName:    bucket,
 		ttlBucketName: ttlBucket,
-		serializer:    c.Serializer,
 		cancel:        cancel,
 		maxAge:        time.Second * time.Duration(c.MaxAge),
 	}
