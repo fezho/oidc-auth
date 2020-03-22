@@ -14,7 +14,7 @@ type boltConn struct {
 	bucketName    []byte
 	ttlBucketName []byte
 
-	maxAge     time.Duration
+	maxAge time.Duration
 
 	// This is called once the Close method is called to signal goroutines
 	cancel context.CancelFunc

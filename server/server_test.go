@@ -5,62 +5,57 @@ import (
 	"github.com/fezho/oidc-auth-service/storage/memory"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-func newTestServer(t *testing.T, updateConfig func(c *Config)) (*httptest.Server, *Server) {
-	var srv *Server
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		srv.ServeHTTP(w, r)
+var (
+	httpServer *httptest.Server
+	server     *Server
+)
+
+func setup() error {
+	// add the following argument in go test command:
+	// --httptest.serve=127.0.0.1:8080
+	httpServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server.ServeHTTP(w, r)
 	}))
 
 	store := memory.New()
 
-	// TODO: call dex api to create client
-
 	config := Config{
 		IssuerURL:    "http://127.0.0.1:5556/dex",
-		RPCEndpoint:  "127.0.0.1:5557",
-		Address:      s.URL,
-		ClientID:     "test-auth-app",
-		ClientSecret: "test-auth-app-secret",
+		RedirectURL:  "http://127.0.0.1:8080/callback",
+		ClientID:     "auth-service",
+		ClientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0",
 		Store:        store,
 	}
-	if updateConfig != nil {
-		updateConfig(&config)
-	}
 
-	srv, err := NewServer(config)
+	var err error
+	server, err = NewServer(config)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-
-	fmt.Println("redirect url " + srv.oauth2Config.RedirectURL)
-	_, err = srv.dexy.CreateClient(config.ClientID, config.ClientID, srv.oauth2Config.RedirectURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return s, srv
+	return nil
 }
 
-func TestNewTestServer(t *testing.T) {
-	httpServer, _ := newTestServer(t, nil)
+func TestMain(m *testing.M) {
+	err := setup()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to setup test server: %v", err)
+		os.Exit(1)
+	}
 	defer httpServer.Close()
-}
 
-// e2e test
+	os.Exit(m.Run())
+}
 
 func TestUnauthorizedRequest(t *testing.T) {
-	httpServer, _ := newTestServer(t, nil)
-	defer httpServer.Close()
-
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	fmt.Printf("auth-service url: %s\n", httpServer.URL)
 	resp, err := client.Get(httpServer.URL)
 	if err != nil {
 		t.Fatal("failed to contact auth-service", err)
@@ -70,12 +65,24 @@ func TestUnauthorizedRequest(t *testing.T) {
 	}
 }
 
-func TestAuthCodeFlow(t *testing.T) {
-	// TODO
+/*
+func TestAuthorizedRequests(t *testing.T) {
+	url := httpServer.URL
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return errors.New("stooped after 10 redirects")
+			}
+			//req.SetBasicAuth("admin@example.com", "password")
+			return nil
+		},
+	}
+	resp, err := client.Get(url)
+	if err != nil {
+		t.Fatal("failed to contact auth-service", err)
+	}
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("expected %v, got %v.", http.StatusFound, resp.StatusCode)
+	}
 }
-
-func TestImplicitFlow(t *testing.T) {
-
-}
-
-// https://github.com/onelogin/openid-connect-dotnet-core-sample
+*/

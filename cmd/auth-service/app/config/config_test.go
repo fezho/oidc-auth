@@ -115,7 +115,8 @@ func TestValidConfiguration(t *testing.T) {
 			HTTP: "localhost:8000",
 		},
 		OIDC: OIDC{
-			Issuer:       "dex.io/callback",
+			Issuer:       "dex.io/dex",
+			RedirectURL:  "auth-service:8080/callback",
 			ClientID:     "my-app",
 			ClientSecret: "my-secret",
 		},
@@ -150,8 +151,10 @@ func TestInValidConfiguration(t *testing.T) {
 	got := err.Error()
 	wanted := `invalid Config:
 	-	no openID connect issuer specified
+	-	no openID connect redirect url specified
 	-	no openID connect client id specified
 	-	no openID connect client secret specified
+    -   no openID connect user name claim specified
 	-	no storage supplied in config file
 	-	must supply a HTTP/HTTPS  address to listen on`
 	if got != wanted {

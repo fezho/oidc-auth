@@ -20,7 +20,7 @@ type Config struct {
 
 	storage.SessionConfig `json:",inline"`
 
-	// TODO: add timeout and tls.SessionConfig
+	// TODO: add timeout and tls?
 }
 
 func init() {

@@ -1,0 +1,20 @@
+web:
+  http: 0.0.0.0:8080
+storage:
+  type: bolt
+  config:
+    path: "/tmp/data.bin"
+    bucketName: "session"
+    maxAge: 1000
+oidc:
+  issuer: "http://127.0.0.1:5556/dex"
+  redirectURL: "http://127.0.0.1:8080/callback"
+  clientID: "auth-service"
+  clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
+  scopes:
+    - email
+    - profile
+  usernameClaim: email
+logger:
+  level: "debug"
+  format: "json"

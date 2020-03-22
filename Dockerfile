@@ -27,9 +27,6 @@ RUN apk add --update ca-certificates openssl
 USER 1001:1001
 COPY --from=0 /go/bin/auth-service /usr/local/bin/auth-service
 
-# Import frontend assets and set the correct CWD directory so the assets
-# are in the default path.
-#COPY web /web
 WORKDIR /
 
 ENTRYPOINT ["auth-service"]

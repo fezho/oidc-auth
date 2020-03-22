@@ -9,6 +9,10 @@ import (
 
 const defaultHashKey = "Don'tChangeTheKeyValueAnyMoreAfterRunningOnce"
 
+func init() {
+	gob.Register(map[string]interface{}{})
+}
+
 // Encode encodes session values to bytes
 func Encode(session *sessions.Session) ([]byte, error) {
 	buf := new(bytes.Buffer)

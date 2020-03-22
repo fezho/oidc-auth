@@ -111,6 +111,7 @@ func RunTestSave(t *testing.T, s *storage.Storage) {
 		}
 
 		session.Values["user"] = "tom"
+		session.Values["tokens"] = map[string]interface{}{"token": "123456"}
 		rsp := httptest.NewRecorder()
 		err = session.Save(req, rsp)
 		if err != nil {
@@ -136,6 +137,10 @@ func RunTestSave(t *testing.T, s *storage.Storage) {
 		user := session.Values["user"]
 		if user != "tom" {
 			t.Fatalf("expected session value user:tom, got user:%s", user)
+		}
+		_, ok = session.Values["tokens"]
+		if !ok {
+			t.Fatal("expected session value map, got nothing")
 		}
 
 		// round 3 delete session, check response's cookie and new operation

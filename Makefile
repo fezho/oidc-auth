@@ -36,30 +36,11 @@ bin/auth-service:
 release-binary:
 	go build -o /go/bin/auth-service -v -ldflags $(LD_FLAGS) $(REPO_PATH)/cmd/auth-service
 
-.PHONY: revendor
-revendor:
-	@go mod tidy -v
-	@go mod vendor -v
-	@go mod verify
-
-test: bin/test/kube-apiserver bin/test/etcd
+test:
 	@go test -v ./...
 
-testrace: bin/test/kube-apiserver bin/test/etcd
+testrace:
 	@go test -v --race ./...
-
-export TEST_ASSET_KUBE_APISERVER=$(abspath bin/test/kube-apiserver)
-export TEST_ASSET_ETCD=$(abspath bin/test/etcd)
-
-bin/test/kube-apiserver:
-	@mkdir -p bin/test
-	curl -L https://storage.googleapis.com/k8s-c10s-test-binaries/kube-apiserver-$(shell uname)-x86_64 > bin/test/kube-apiserver
-	chmod +x bin/test/kube-apiserver
-
-bin/test/etcd:
-	@mkdir -p bin/test
-	curl -L https://storage.googleapis.com/k8s-c10s-test-binaries/etcd-$(shell uname)-x86_64 > bin/test/etcd
-	chmod +x bin/test/etcd
 
 bin/golangci-lint: bin/golangci-lint-${GOLANGCI_VERSION}
 	@ln -sf golangci-lint-${GOLANGCI_VERSION} bin/golangci-lint
@@ -75,10 +56,21 @@ lint: bin/golangci-lint ## Run linter
 fix: bin/golangci-lint ## Fix lint violations
 	bin/golangci-lint run --fix
 
-.PHONY: docker-image
-docker-image:
-	#@sudo docker build -t $(DOCKER_IMAGE) .
+.PHONY: image
+image:
 	@docker build -t $(DOCKER_IMAGE) .
+
+.PHONY: get
+get:
+	@go get ./...
+	@go mod verify
+	@go mod tidy
+
+.PHONY: update
+update:
+	@go get -u -v all
+	@go mod verify
+	@go mod tidy
 
 clean:
 	@rm -rf bin/

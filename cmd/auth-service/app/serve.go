@@ -23,7 +23,7 @@ func CommandServe() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:  "auth-service",
-		Long: `The auth-service is a oidc auth service...`,
+		Long: `The auth-service is a oidc auth service`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := runCommand(cmd, args, opts); err != nil {
 				fmt.Fprintln(os.Stderr, err)
@@ -47,8 +47,6 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	if len(args) != 0 {
 		fmt.Fprintf(os.Stderr, "arguments %v are not supported for %q\n", args, cmd.CommandPath())
 	}
-
-	fmt.Println("implement here...")
 
 	// load config, init log and validate config
 	c, err := config.LoadConfigFromFile(opts.ConfigFile)
@@ -75,20 +73,16 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	defer storage.Close()
 
 	serverConfig := server.Config{
-		IssuerURL:    c.OIDC.Issuer,
-		RPCEndpoint:  c.OIDC.RPCEndpoint,
-		Address:      c.Web.HTTP,
-		ClientID:     c.OIDC.ClientID,
-		ClientSecret: c.OIDC.ClientSecret,
-		Scopes:       c.OIDC.Scopes,
-		URIWhitelist: c.OIDC.URIWhitelist,
-		// TODO: set UserIDOpts
-		UserIDOpts:     server.UserIDOpts{},
+		IssuerURL:      c.OIDC.Issuer,
+		RedirectURL:    c.OIDC.RedirectURL,
+		ClientID:       c.OIDC.ClientID,
+		ClientSecret:   c.OIDC.ClientSecret,
+		Scopes:         c.OIDC.Scopes,
+		UsernameClaim:  c.OIDC.UsernameClaim,
+		GroupsClaim:    c.OIDC.GroupsClaim,
 		Store:          storage,
 		AllowedOrigins: c.Web.AllowedOrigins,
-	}
-	if serverConfig.Address == "" {
-		serverConfig.Address = c.Web.HTTPS
+		OfflineAccess:  c.OIDC.OfflineAccess,
 	}
 
 	srv, err := server.NewServer(serverConfig)

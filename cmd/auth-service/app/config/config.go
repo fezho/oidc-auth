@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/fezho/oidc-auth-service/storage"
+	_ "github.com/fezho/oidc-auth-service/storage/bolt"
+	_ "github.com/fezho/oidc-auth-service/storage/redis"
 	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
@@ -42,8 +44,10 @@ func (c Config) Validate() error {
 		errMsg string
 	}{
 		{c.OIDC.Issuer == "", "no openID connect issuer specified"},
+		{c.OIDC.RedirectURL == "", "no openID connect redirect url specified"},
 		{c.OIDC.ClientID == "", "no openID connect client id specified"},
 		{c.OIDC.ClientSecret == "", "no openID connect client secret specified"},
+		{c.OIDC.UsernameClaim == "", "no openID connect user name claim specified"},
 		{c.Storage.Config == nil, "no storage supplied in config file"},
 		{c.Web.HTTP == "" && c.Web.HTTPS == "", "must supply a HTTP/HTTPS  address to listen on"},
 		{c.Web.HTTPS != "" && c.Web.TLSCert == "", "no cert specified for HTTPS"},
@@ -76,18 +80,30 @@ type Web struct {
 // OIDC is the config for authorization handlers with oidc provider
 type OIDC struct {
 	// URL of the OpenID Connect issuer
+	// Required.
 	Issuer string `json:"issuer"`
+	// Redirect URL is the callback URL for OAuth2 responses, should be auth-service's URL+callback_path
+	// Required.
+	RedirectURL string `json:"redirectURL"`
 	// OAuth2 client ID of this application
+	// Required.
 	ClientID string `json:"clientID"`
 	// OAuth2 client secret of this application
+	// Required.
 	ClientSecret string `json:"clientSecret"`
 	// Scope specifies optional requested permissions
 	Scopes []string `json:"scopes"`
-	// Whitelist of URIs like "/info /health" to bypass authorization
-	URIWhitelist []string `json:"uriWhitelist"`
-	// dex's gRPC endpoint
-	RPCEndpoint string `json:"rpcEndpoint"`
-	// TODO: add UserIDOpts
+	// If your application needs to refresh access tokens when the user
+	// is not present at the browser, then use offline.
+	// Then the token response will include a refresh token.
+	OfflineAccess bool `json:"offlineAccess"`
+	// UsernameClaim is the JWT field to use as the user's username.
+	// Required.
+	UsernameClaim string `json:"usernameClaim"`
+	// GroupsClaim, if specified, causes the OIDCAuthenticator to try to populate the user's
+	// groups with an ID Token field. If the GroupsClaim field is present in an ID Token the value
+	// must be a string or list of strings.
+	GroupsClaim string `json:"groupsClaim"`
 }
 
 // Storage holds app's storage configuration.
