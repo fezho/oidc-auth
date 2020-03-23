@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oidc-auth
+spec:
+  type: ClusterIP
+  selector:
+    app: oidc-auth
+  ports:
+    - port: 8080
+      targetPort: http-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oidc-auth-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: oidc-auth
+  ports:
+    - port: 8080
+      targetPort: http-api
+      nodePort: 30007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oidc-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oidc-auth
+  template:
+    metadata:
+      labels:
+        app: oidc-auth
+    spec:
+      # kubectl create secret docker-registry regcred --docker-server=docker.pkg.github.com ....
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: oidc-auth
+          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:5949cbc5d19bbe3d4de6e0e6c80736613e6b814b
+          command: ["/usr/local/bin/auth-service", "--config", "/etc/oidc-auth/cfg/config.yaml"]
+          imagePullPolicy: Always
+          ports:
+            - name: http-api
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /etc/oidc-auth/cfg
+            - name: db
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: oidc-auth
+        - name: db
+          emptyDir: {}
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: oidc-auth
+data:
+  config.yaml: |-
+    web:
+      http: 0.0.0.0:8080
+    storage:
+      type: bolt
+      config:
+        path: "/tmp/data.bin"
+        bucketName: "session"
+        maxAge: 1800
+    oidc:
+      issuer: http://192.168.99.122:5556/dex
+      redirectURL: http://192.168.99.122:30007/callback
+      clientID: auth-service
+      clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
+      scopes:
+        - email
+        - profile
+      usernameClaim: email
+    logger:
+      level: "debug"
+      format: "json"

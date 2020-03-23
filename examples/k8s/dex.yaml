@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dex
+spec:
+  type: ClusterIP
+  selector:
+    app: dex
+  ports:
+    - name: dex
+      port: 5556
+      protocol: TCP
+      targetPort: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dex
+  template:
+    metadata:
+      labels:
+        app: dex
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - image: quay.io/dexidp/dex:v2.10.0
+          name: dex
+          command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+          ports:
+            - name: http
+              containerPort: 5556
+          volumeMounts:
+            - name: config
+              mountPath: /etc/dex/cfg
+            - name: db
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: dex
+        - name: db
+          emptyDir: {}
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dex
+data:
+  config.yaml: |-
+    issuer: http://192.168.99.122:5556/dex
+    storage:
+      type: sqlite3
+      config:
+        file: /data/dex.db
+    web:
+      http: 0.0.0.0:5556
+    telemetry:
+      http: 0.0.0.0:5558
+    connectors:
+    - type: mockCallback
+      id: mock
+      name: Example
+    oauth2:
+      skipApprovalScreen: true
+
+    staticClients:
+    - id: auth-service
+      redirectURIs:
+      - 'http://192.168.99.122:30007/callback'
+      name: 'OIDC Auth App'
+      secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+
+    enablePasswordDB: true
+    staticPasswords:
+    - email: "admin@example.com"
+      # bcrypt hash of the string "password"
+      hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+      username: "admin"
+      userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"

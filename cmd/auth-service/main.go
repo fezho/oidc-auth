@@ -12,3 +12,5 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+// TODO: rename to oidc-auth

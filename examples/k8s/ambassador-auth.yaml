@@ -1,0 +1,25 @@
+---
+apiVersion: getambassador.io/v2
+kind: AuthService
+metadata:
+  name: authentication
+spec:
+  auth_service: "192.168.99.122:8080"
+  allowed_request_headers:
+    - "Authorization"
+    - "Cookie"
+  allowed_authorization_headers:
+    - "Authorization"
+    - "Set-cookie"
+
+---
+apiVersion: getambassador.io/v2
+kind: Mapping
+metadata:
+  name: oidc-auth
+spec:
+  prefix: /callback
+  service: oidc-auth:8080
+
+
+

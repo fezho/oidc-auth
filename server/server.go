@@ -86,14 +86,12 @@ func NewServer(config Config) (*Server, error) {
 	router := mux.NewRouter()
 	// Authorization redirect callback from OAuth2 auth flow.
 	router.HandleFunc("/callback", s.callback).Methods(http.MethodGet)
-	//router.HandleFunc("/logout", bearerTokenHandler(s.logout)).Methods(http.MethodGet)
 	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)
 	router.HandleFunc("/refresh_token", bearerTokenHandler(s.refreshToken)).Methods(http.MethodGet)
-	//router.HandleFunc("/", bearerTokenHandler(s.auth))
-	router.HandleFunc("/", s.auth)
+	//router.HandleFunc("/login", s.auth)
 	router.Handle("/healthz", s.healthCheck(context.Background()))
-
-	// TODO: add session detail?
+	// TODO: distinguish / and /login
+	router.PathPrefix("/").HandlerFunc(s.auth)
 
 	s.mux = router
 	if len(config.AllowedOrigins) > 0 {

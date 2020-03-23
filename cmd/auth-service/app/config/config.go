@@ -30,6 +30,7 @@ func LoadConfigFromFile(file string) (*Config, error) {
 
 func LoadConfig(data []byte) (*Config, error) {
 	var c Config
+	data = []byte(os.ExpandEnv(string(data)))
 	if err := yaml.Unmarshal(data, &c); err != nil {
 		return nil, err
 	}
@@ -131,8 +132,7 @@ func (s *Storage) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("no storage config found")
 	}
 
-	data := []byte(os.ExpandEnv(string(store.Config)))
-	if err := json.Unmarshal(data, cfg); err != nil {
+	if err := json.Unmarshal(store.Config, cfg); err != nil {
 		return fmt.Errorf("parse storage config: %v", err)
 	}
 

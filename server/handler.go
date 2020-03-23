@@ -16,6 +16,8 @@ const authSessionName = "oidc-auth-session"
 
 // callback is the handler responsible for exchanging the auth_code and retrieving an id_token.
 func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
+	log.Info("go into callback")
+
 	// Get authorization code from authorization response.
 	var authCode = r.FormValue("code")
 	if len(authCode) == 0 {
@@ -32,7 +34,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
 		log.Errorf("failed to get session: %v", err)
-		http.Error(w, "InternalError", http.StatusInternalServerError)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
@@ -41,6 +43,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	redirect := session.Flashes("redirect_to")
+	log.Infof("redirect: %v", redirect)
 
 	// Exchange the authorization code with {access, refresh, id}_token
 	oauth2Token, err := s.oauth2Config.Exchange(r.Context(), authCode)
@@ -71,15 +74,18 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 func (s *Server) refreshToken(w http.ResponseWriter, r *http.Request) {
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	if session.IsNew {
+		log.Error(err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
 	refresh, ok := session.Values["refresh-token"].(string)
 	if !ok {
+		log.Error(err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
@@ -89,12 +95,14 @@ func (s *Server) refreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 	oauth2Token, err := s.oauth2Config.TokenSource(context.Background(), t).Token()
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
 	session.Values["refresh-token"] = oauth2Token.RefreshToken
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
+		log.Error(err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
@@ -107,6 +115,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	// Revoke user session
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -126,8 +135,10 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	// Check if user session is valid
+	log.Info("go into auth")
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -146,6 +157,7 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	session.Flashes("nonce")
 	nonce := uuid.New().String()
 	session.AddFlash(r.URL.String(), "redirect_to")
+	log.Infof("redirect url: %s", r.URL.String())
 	session.AddFlash(nonce, "nonce")
 	if err = session.Save(r, w); err != nil {
 		log.Errorf("failed to save session: %v", err)
@@ -197,6 +209,7 @@ func (s *Server) authenticateToken(token string, session *sessions.Session, w ht
 
 	session.Values["id_token"] = token
 	if err := sessions.Save(r, w); err != nil {
+		log.Error(err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return false
 	}
