@@ -119,18 +119,18 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	if session.IsNew {
-		// It's a new session, redirect back to auth page
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	session.Options.MaxAge = -1
-	if err := sessions.Save(r, w); err != nil {
-		log.Errorf("Couldn't delete user session: %v", err)
+
+	if !session.IsNew {
+		session.Options.MaxAge = -1
+		if err := sessions.Save(r, w); err != nil {
+			log.Errorf("Couldn't delete user session: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	// Redirect back to the auth page
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Logout successfully."))
 }
 
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {

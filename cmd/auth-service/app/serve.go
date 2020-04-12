@@ -83,6 +83,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 		Store:          storage,
 		AllowedOrigins: c.Web.AllowedOrigins,
 		OfflineAccess:  c.OIDC.OfflineAccess,
+		PathPrefix:     c.Web.PathPrefix,
 	}
 
 	srv, err := server.NewServer(serverConfig)

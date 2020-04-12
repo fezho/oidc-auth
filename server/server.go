@@ -7,11 +7,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"net/http"
 )
 
 type Config struct {
+	// PathPrefix for auth api, or RootPath
+	PathPrefix string
 	// URL of the OpenID Connect issuer
 	IssuerURL string
 	// callback url for OpenID Connect Provider response.
@@ -84,6 +87,11 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	router := mux.NewRouter()
+	if config.PathPrefix != "" {
+		log.Info("Use PathPrefix: %s to route", config.PathPrefix)
+		router = router.PathPrefix(config.PathPrefix).Subrouter()
+	}
+
 	// Authorization redirect callback from OAuth2 auth flow.
 	router.HandleFunc("/callback", s.callback).Methods(http.MethodGet)
 	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)

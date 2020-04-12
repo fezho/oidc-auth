@@ -62,7 +62,7 @@ telemetry:
 staticClients:
   - id: auth-service
     redirectURIs:
-      - 'http://127.0.0.1:8080/callback'
+      - 'http://127.0.0.1:8080/auth/callback'
     name: 'Example App'
     secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 

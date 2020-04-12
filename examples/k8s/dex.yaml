@@ -27,8 +27,6 @@ spec:
       labels:
         app: dex
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - image: quay.io/dexidp/dex:v2.10.0
           name: dex
@@ -55,7 +53,7 @@ metadata:
   name: dex
 data:
   config.yaml: |-
-    issuer: http://192.168.99.122:5556/dex
+    issuer: http://192.168.99.122:30036/dex
     storage:
       type: sqlite3
       config:
@@ -74,7 +72,7 @@ data:
     staticClients:
     - id: auth-service
       redirectURIs:
-      - 'http://192.168.99.122:30007/callback'
+      - 'http://192.168.99.122:30036/callback'
       name: 'OIDC Auth App'
       secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 

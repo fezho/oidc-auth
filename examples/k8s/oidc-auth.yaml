@@ -44,7 +44,7 @@ spec:
         - name: regcred
       containers:
         - name: oidc-auth
-          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:5949cbc5d19bbe3d4de6e0e6c80736613e6b814b
+          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:e48f9199cee5308f35885381ca6dce34e0d7b0a7
           command: ["/usr/local/bin/auth-service", "--config", "/etc/oidc-auth/cfg/config.yaml"]
           imagePullPolicy: Always
           ports:
@@ -79,7 +79,7 @@ data:
         maxAge: 1800
     oidc:
       issuer: http://192.168.99.122:5556/dex
-      redirectURL: http://192.168.99.122:30007/callback
+      redirectURL: http://192.168.99.122:30036/callback
       clientID: auth-service
       clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
       scopes:

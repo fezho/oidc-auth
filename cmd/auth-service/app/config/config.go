@@ -76,6 +76,7 @@ type Web struct {
 	// List of allowed origins for CORS requests on discovery, token and keys endpoint.
 	// If none are indicated, CORS requests are disabled. Passing in "*" will allow any domain.
 	AllowedOrigins []string `json:"allowedOrigins"`
+	PathPrefix     string   `json:"pathPrefix"` // TODO: rename to rootpath?
 }
 
 // OIDC is the config for authorization handlers with oidc provider

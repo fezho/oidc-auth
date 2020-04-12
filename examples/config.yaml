@@ -1,5 +1,6 @@
 web:
   http: 0.0.0.0:8080
+  pathPrefix: "/auth"
 storage:
   type: bolt
   config:
@@ -8,7 +9,7 @@ storage:
     maxAge: 1000
 oidc:
   issuer: "http://127.0.0.1:5556/dex"
-  redirectURL: "http://127.0.0.1:8080/callback"
+  redirectURL: "http://127.0.0.1:8080/auth/callback"
   clientID: "auth-service"
   clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
   scopes:
