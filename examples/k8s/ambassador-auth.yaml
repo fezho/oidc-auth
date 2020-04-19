@@ -6,8 +6,8 @@ metadata:
 spec:
   auth_service: "oidc-auth:8080"
   allowed_request_headers:
-    - "Authorization"
     - "Cookie"
+    - "Authorization"
   allowed_authorization_headers:
     - "Authorization"
     - "Set-cookie"
@@ -18,8 +18,9 @@ kind: Mapping
 metadata:
   name: oidc-auth
 spec:
-  prefix: /callback
+  prefix: /callbac
   service: oidc-auth:8080
+  rewrite: ""  # disable rewrite  https://www.getambassador.io/docs/latest/topics/using/rewrites/
 
 ---
 apiVersion: getambassador.io/v2
@@ -27,7 +28,9 @@ kind: Mapping
 metadata:
   name: dex
 spec:
-  prefix: /dex
+  prefix: /dex/
   service: dex:5556
+  rewrite: ""
+  bypass_auth: true
 
 

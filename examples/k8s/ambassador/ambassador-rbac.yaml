@@ -11,6 +11,7 @@ spec:
   - name: ambassador-admin
     port: 8877
     targetPort: 8877
+    nodePort: 30077
   selector:
     service: ambassador
 ---

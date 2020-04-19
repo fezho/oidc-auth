@@ -2,19 +2,20 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/coreos/go-oidc"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"net/http"
+	"net/url"
 )
 
 type Config struct {
-	// PathPrefix for auth api, or RootPath
-	PathPrefix string
+	// Dex server address, Optional.
+	DexAddress string
 	// URL of the OpenID Connect issuer
 	IssuerURL string
 	// callback url for OpenID Connect Provider response.
@@ -59,9 +60,19 @@ type UserIDOpts struct {
 }
 
 func NewServer(config Config) (*Server, error) {
-	provider, err := oidc.NewProvider(context.Background(), config.IssuerURL)
+	url, err := url.Parse(config.RedirectURL)
 	if err != nil {
-		return nil, errors.Errorf("failed to get provider %q: %v", config.IssuerURL, err)
+		return nil, fmt.Errorf("server: can't parse redirect URL %q", config.RedirectURL)
+	}
+
+	client := http.DefaultClient
+	if config.DexAddress != "" {
+		client.Transport = NewDexRewriteURLRoundTripper(config.DexAddress, http.DefaultTransport)
+	}
+	ctx := oidc.ClientContext(context.Background(), client)
+	provider, err := oidc.NewProvider(ctx, config.IssuerURL)
+	if err != nil {
+		return nil, errors.Errorf("server: can't get oidc provider %q: %v", config.IssuerURL, err)
 	}
 
 	// This is the only mandatory scope and will return a sub claim
@@ -87,18 +98,18 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	router := mux.NewRouter()
-	if config.PathPrefix != "" {
-		log.Info("Use PathPrefix: %s to route", config.PathPrefix)
-		router = router.PathPrefix(config.PathPrefix).Subrouter()
-	}
 
 	// Authorization redirect callback from OAuth2 auth flow.
-	router.HandleFunc("/callback", s.callback).Methods(http.MethodGet)
+	router.HandleFunc(url.Path, s.callback).Methods(http.MethodGet)
 	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)
 	router.HandleFunc("/refresh_token", bearerTokenHandler(s.refreshToken)).Methods(http.MethodGet)
 	//router.HandleFunc("/login", s.auth)
 	router.Handle("/healthz", s.healthCheck(context.Background()))
-	// TODO: distinguish / and /login
+	router.HandleFunc("/favicon.ico", func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusNoContent)
+	})
+
+	// TODO: distinguish / and /login, and check ambassador-auth-oidc, when to redirect and when to return ok
 	router.PathPrefix("/").HandlerFunc(s.auth)
 
 	s.mux = router

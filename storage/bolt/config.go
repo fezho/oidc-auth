@@ -26,7 +26,7 @@ func init() {
 }
 
 func (c *Config) Open() (*storage.Storage, error) {
-	db, err := bolt.Open(c.Path, 0666, nil)
+	db, err := bolt.Open(c.Path, 0666, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return nil, err
 	}

@@ -14,10 +14,10 @@ import (
 
 const authSessionName = "oidc-auth-session"
 
+// TODO: check https://github.com/argoproj/argo-cd/blob/master/util/oidc/oidc.go
+
 // callback is the handler responsible for exchanging the auth_code and retrieving an id_token.
 func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
-	log.Info("go into callback")
-
 	// Get authorization code from authorization response.
 	var authCode = r.FormValue("code")
 	if len(authCode) == 0 {
@@ -39,6 +39,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if nonce := session.Flashes("nonce"); len(nonce) == 0 || nonce[0].(string) != state {
+		deleteCookie(session, w, r)
 		http.Error(w, "access is unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -48,6 +49,8 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	// Exchange the authorization code with {access, refresh, id}_token
 	oauth2Token, err := s.oauth2Config.Exchange(r.Context(), authCode)
 	if err != nil {
+		log.Errorf("failed to exchange auth code, %v", err)
+		deleteCookie(session, w, r)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
@@ -55,15 +58,18 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
+		log.Errorf("failed to get id token, %v", err)
+		deleteCookie(session, w, r)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
 
 	if valid := s.authenticateToken(rawIDToken, session, w, r); !valid {
+		//deleteCookie(session, w, r)
 		return
 	}
 
-	log.Info("Login validated with ID token, redirecting.")
+	log.Debug("Login validated with ID token, redirecting.")
 
 	if len(redirect) > 0 {
 		http.Redirect(w, r, redirect[0].(string), http.StatusFound)
@@ -121,21 +127,22 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !session.IsNew {
-		session.Options.MaxAge = -1
-		if err := sessions.Save(r, w); err != nil {
-			log.Errorf("Couldn't delete user session: %v", err)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
+		deleteCookie(session, w, r)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Logout successfully."))
 }
 
+func deleteCookie(session *sessions.Session, w http.ResponseWriter, r *http.Request) {
+	session.Options.MaxAge = -1
+	_ = session.Save(r, w) // return nil
+}
+
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
+	// TODO: add whitelist check
+
 	// Check if user session is valid
-	log.Info("go into auth")
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
 		log.Error(err)
@@ -149,17 +156,21 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 			s.login(session, w)
 			return
 		}
+		log.Debugf("session is expired, %v", session)
+		// remove redirect_to & nonce first to make sure they are latest
+		session.Flashes("redirect_to")
+		session.Flashes("nonce")
 	}
 
 	// User is NOT logged in
-	// remove redirect_to & nonce first to make sure they are latest
-	session.Flashes("redirect_to")
-	session.Flashes("nonce")
+	s.doOIDCAuth(session, w, r)
+}
+
+func (s *Server) doOIDCAuth(session *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	nonce := uuid.New().String()
 	session.AddFlash(r.URL.String(), "redirect_to")
-	log.Infof("redirect url: %s", r.URL.String())
 	session.AddFlash(nonce, "nonce")
-	if err = session.Save(r, w); err != nil {
+	if err := session.Save(r, w); err != nil {
 		log.Errorf("failed to save session: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -180,36 +191,38 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 func (s *Server) authenticateToken(token string, session *sessions.Session, w http.ResponseWriter, r *http.Request) bool {
 	verifier := s.provider.Verifier(&oidc.Config{ClientID: s.oauth2Config.ClientID})
 	idToken, err := verifier.Verify(r.Context(), token)
+	// TODO: fix this https://github.com/argoproj/argo-cd/pull/1114/files
 	if err != nil {
+		log.Errorf("verify token failed: %v", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return false
 	}
 
 	var c claims
 	if err := idToken.Claims(&c); err != nil {
-		log.Errorf("failed to parse oidc claims: %v", err)
+		log.Errorf("parse oidc claims failed: %v", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return false
 	}
 
 	username, err := c.extractUsername(s.usernameClaim)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("failed to extract user name: %v", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 	}
 	session.Values["user_name"] = username
 	if len(s.groupsClaim) > 0 {
 		groups, err := c.extractGroups(s.groupsClaim)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to extract user group: %v", err)
 			http.Error(w, "authentication failed", http.StatusUnauthorized)
 		}
 		session.Values["user_groups"] = groups
 	}
 
 	session.Values["id_token"] = token
-	if err := sessions.Save(r, w); err != nil {
-		log.Error(err)
+	if err := session.Save(r, w); err != nil {
+		log.Errorf("save session failed: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return false
 	}
@@ -229,6 +242,8 @@ func (s *Server) login(session *sessions.Session, w http.ResponseWriter) {
 			w.Header().Set("user_groups", groups)
 		}
 	}
+
+	log.Debug("login succeed")
 
 	w.WriteHeader(http.StatusOK)
 }

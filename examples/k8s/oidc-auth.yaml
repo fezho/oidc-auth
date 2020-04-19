@@ -38,15 +38,12 @@ spec:
         app: oidc-auth
     spec:
       # kubectl create secret docker-registry regcred --docker-server=docker.pkg.github.com ....
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       imagePullSecrets:
         - name: regcred
       containers:
         - name: oidc-auth
-          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:e48f9199cee5308f35885381ca6dce34e0d7b0a7
+          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:a2d4054f12cfa948ddaab35c9748a2b569ec6790-dirty
           command: ["/usr/local/bin/auth-service", "--config", "/etc/oidc-auth/cfg/config.yaml"]
-          imagePullPolicy: Always
           ports:
             - name: http-api
               containerPort: 8080
@@ -54,13 +51,14 @@ spec:
             - name: config
               mountPath: /etc/oidc-auth/cfg
             - name: db
-              mountPath: /tmp
+              mountPath: /data
       volumes:
         - name: config
           configMap:
             name: oidc-auth
         - name: db
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: auth-pvc
 
 ---
 kind: ConfigMap
@@ -74,12 +72,13 @@ data:
     storage:
       type: bolt
       config:
-        path: "/tmp/data.bin"
+        path: "/data/data.bin"
         bucketName: "session"
         maxAge: 1800
     oidc:
-      issuer: http://192.168.99.122:5556/dex
-      redirectURL: http://192.168.99.122:30036/callback
+      dexAddress: http://dex:5556
+      issuer: http://192.168.99.123:30036/dex
+      redirectURL: http://192.168.99.123:30036/callback
       clientID: auth-service
       clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
       scopes:
@@ -89,3 +88,31 @@ data:
     logger:
       level: "debug"
       format: "json"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: auth-pv
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/pv0002"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auth-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+

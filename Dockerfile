@@ -24,7 +24,6 @@ FROM alpine:3.10
 # OpenSSL is required so wget can query HTTPS endpoints for health checking.
 RUN apk add --update ca-certificates openssl
 
-USER 1001:1001
 COPY --from=0 /go/bin/auth-service /usr/local/bin/auth-service
 
 WORKDIR /

@@ -76,11 +76,13 @@ type Web struct {
 	// List of allowed origins for CORS requests on discovery, token and keys endpoint.
 	// If none are indicated, CORS requests are disabled. Passing in "*" will allow any domain.
 	AllowedOrigins []string `json:"allowedOrigins"`
-	PathPrefix     string   `json:"pathPrefix"` // TODO: rename to rootpath?
 }
 
 // OIDC is the config for authorization handlers with oidc provider
 type OIDC struct {
+	// Dex server address, this is used when requests Dex in same cluster to avoid from api gateway or external load balancer.
+	// Optional.
+	DexAddress string `json:"dexAddress"`
 	// URL of the OpenID Connect issuer
 	// Required.
 	Issuer string `json:"issuer"`

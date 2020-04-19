@@ -44,7 +44,9 @@ spec:
           configMap:
             name: dex
         - name: db
-          emptyDir: {}
+          # should be persistent, or would get issue:  https://github.com/argoproj/argo-cd/issues/1113
+          persistentVolumeClaim:
+            claimName: dex-pvc
 
 ---
 kind: ConfigMap
@@ -53,7 +55,7 @@ metadata:
   name: dex
 data:
   config.yaml: |-
-    issuer: http://192.168.99.122:30036/dex
+    issuer: http://192.168.99.123:30036/dex
     storage:
       type: sqlite3
       config:
@@ -67,12 +69,12 @@ data:
       id: mock
       name: Example
     oauth2:
-      skipApprovalScreen: true
+      #skipApprovalScreen: true
 
     staticClients:
     - id: auth-service
       redirectURIs:
-      - 'http://192.168.99.122:30036/callback'
+      - 'http://192.168.99.123:30036/callback'
       name: 'OIDC Auth App'
       secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 
@@ -83,3 +85,31 @@ data:
       hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
       username: "admin"
       userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dex-pv
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/pv0001"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dex-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+

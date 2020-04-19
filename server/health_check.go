@@ -20,7 +20,7 @@ func (s *Server) healthCheck(ctx context.Context) http.Handler {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Second * 15):
+			case <-time.After(time.Second * 30):
 			}
 			h.runHealthCheck()
 		}

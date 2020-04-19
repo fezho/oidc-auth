@@ -62,7 +62,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	}
 
 	if c.Logger.Level != "" {
-		log.Infof("config using log level: %s", c.Logger.Level)
+		log.Infof("use log level: %s", c.Logger.Level)
 	}
 
 	// initiate session storage
@@ -73,6 +73,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	defer storage.Close()
 
 	serverConfig := server.Config{
+		DexAddress:     c.OIDC.DexAddress,
 		IssuerURL:      c.OIDC.Issuer,
 		RedirectURL:    c.OIDC.RedirectURL,
 		ClientID:       c.OIDC.ClientID,
@@ -83,7 +84,6 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 		Store:          storage,
 		AllowedOrigins: c.Web.AllowedOrigins,
 		OfflineAccess:  c.OIDC.OfflineAccess,
-		PathPrefix:     c.Web.PathPrefix,
 	}
 
 	srv, err := server.NewServer(serverConfig)
