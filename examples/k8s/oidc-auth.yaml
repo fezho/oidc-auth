@@ -42,7 +42,7 @@ spec:
         - name: regcred
       containers:
         - name: oidc-auth
-          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:5cfcc60ca3b9323c2ea21f1f3f789e454b1c46be
+          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:7a1a07bb33e01c72794d5f73c8da204b0ff57cc2-dirty
           command: ["/usr/local/bin/auth-service", "--config", "/etc/oidc-auth/cfg/config.yaml"]
           ports:
             - name: http-api
@@ -78,7 +78,7 @@ data:
     oidc:
       dexAddress: http://dex:5556
       issuer: http://192.168.99.123:30036/dex
-      redirectURL: http://192.168.99.123:30036/callback
+      redirectURL: http://192.168.99.123:30036/auth/callback
       clientID: auth-service
       clientSecret: "ZXhhbXBsZS1hcHAtc2VjcmV0"
       scopes:

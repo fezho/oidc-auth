@@ -28,7 +28,12 @@ type DexRewriteURLRoundTripper struct {
 }
 
 func (s DexRewriteURLRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	// Exclude the .well-known path, in case to get error from oidc package:
+	// oidc: issuer did not match the issuer returned by provider
+	//if !strings.HasSuffix(r.URL.Path, "/.well-known/openid-configuration") {
 	r.URL.Host = s.DexURL.Host
 	r.URL.Scheme = s.DexURL.Scheme
+	//}
+
 	return s.T.RoundTrip(r)
 }

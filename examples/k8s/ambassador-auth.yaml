@@ -18,7 +18,7 @@ kind: Mapping
 metadata:
   name: oidc-auth
 spec:
-  prefix: /callbac
+  prefix: /auth/
   service: oidc-auth:8080
   rewrite: ""  # disable rewrite  https://www.getambassador.io/docs/latest/topics/using/rewrites/
 

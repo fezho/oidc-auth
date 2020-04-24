@@ -12,6 +12,12 @@ const (
 	MEMORY Type = "memory"
 )
 
+// Config is a config interface that every Conn SessionConfig would implement it
+type Config interface {
+	Open() (*Storage, error)
+	SetSecureCookie(val bool)
+}
+
 type SessionConfig struct {
 	// KeyPairs are used to generate securecookie.Codec,
 	// Should not change them after application is started,
@@ -20,11 +26,14 @@ type SessionConfig struct {
 	KeyPairs []string `json:"keyPairs"`
 	// Session Max-Age attribute present and given in seconds.
 	MaxAge int `json:"maxAge"`
+
+	// secureCookie indicates if the cookie should be set with the Secure flag, meaning it should
+	// only ever be sent over HTTPS. This value is inferred by the scheme of the RedirectURL.
+	secureCookie bool
 }
 
-// Config is a config interface that every Conn SessionConfig would implement it
-type Config interface {
-	Open() (*Storage, error)
+func (sc *SessionConfig) SetSecureCookie(val bool) {
+	sc.secureCookie = val
 }
 
 type ConfigBuilder func() Config

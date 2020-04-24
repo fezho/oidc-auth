@@ -6,10 +6,9 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// Amount of time for cookies/redis keys to expire.
 type redisConn struct {
-	Pool       *redis.Pool
-	keyPrefix  string
+	Pool      *redis.Pool
+	keyPrefix string
 }
 
 func dial(address, password string, db int) (redis.Conn, error) {

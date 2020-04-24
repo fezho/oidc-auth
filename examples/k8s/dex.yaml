@@ -74,7 +74,7 @@ data:
     staticClients:
     - id: auth-service
       redirectURIs:
-      - 'http://192.168.99.123:30036/callback'
+      - 'http://192.168.99.123:30036/auth/callback'
       name: 'OIDC Auth App'
       secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 

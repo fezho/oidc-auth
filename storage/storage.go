@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/base32"
+	"fmt"
 	"github.com/fezho/oidc-auth-service/storage/internal"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -22,12 +23,14 @@ type Storage struct {
 }
 
 // TODO: support one place login? or just delete the old one when saving session
+/*
 type IStroage interface {
 	sessions.Store
 
 	SetUserToken(user, token string) error
 	IsLatestUserToken(user, token string) (bool, error)
 }
+*/
 
 // Conn is the interface for underlying persistent database
 type Conn interface {
@@ -55,6 +58,7 @@ func New(conn Conn, config SessionConfig) *Storage {
 		options: &sessions.Options{
 			Path:   "/",
 			MaxAge: maxAge,
+			Secure: config.secureCookie,
 		},
 		conn: conn,
 	}
@@ -95,11 +99,13 @@ func (s *Storage) New(r *http.Request, name string) (*sessions.Session, error) {
 			// This means a cookie could not be decoded and validated,
 			// so we ignore this cookie and return a new session
 			// This usually is errTimestampExpired
-			// TODO: find a better way? construct storage error?
-			scErr := err.(securecookie.Error)
-			if scErr.IsDecode() {
-				log.Warnf("failed to decode cookie, error: %v", err)
-				err = nil
+			if scErr, ok := err.(securecookie.Error); ok {
+				if scErr.IsDecode() {
+					log.Warnf("storage: decode cookie error: %s", err)
+					err = nil
+				}
+			} else {
+				err = fmt.Errorf("unknown securecookie error: %v", err)
 			}
 		}
 	}

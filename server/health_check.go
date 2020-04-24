@@ -77,12 +77,6 @@ func checkStorageHealth(s sessions.Store) error {
 	return nil
 }
 
-func checkOIDCProvider() error {
-	// TODO: call below url:
-	// http://127.0.0.1:5556/dex/.well-known/openid-configuration
-	return nil
-}
-
 func (h *healthChecker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.mu.RLock()
 	err := h.err

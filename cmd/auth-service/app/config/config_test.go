@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/fezho/oidc-auth-service/storage"
 	"github.com/fezho/oidc-auth-service/storage/bolt"
 	"github.com/fezho/oidc-auth-service/storage/redis"
@@ -151,13 +152,14 @@ func TestInValidConfiguration(t *testing.T) {
 	got := err.Error()
 	wanted := `invalid Config:
 	-	no openID connect issuer specified
-	-	no openID connect redirect url specified
+	-	no openID connect redirect url specified, or trailing slash is not allowed
 	-	no openID connect client id specified
 	-	no openID connect client secret specified
-    -   no openID connect user name claim specified
+	-	no openID connect user name claim specified
 	-	no storage supplied in config file
 	-	must supply a HTTP/HTTPS  address to listen on`
 	if got != wanted {
+		fmt.Println(got)
 		t.Fatalf("Expected error message to be %q, got %q", wanted, got)
 	}
 }

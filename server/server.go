@@ -11,6 +11,7 @@ import (
 	"golang.org/x/oauth2"
 	"net/http"
 	"net/url"
+	"path"
 )
 
 type Config struct {
@@ -60,10 +61,13 @@ type UserIDOpts struct {
 }
 
 func NewServer(config Config) (*Server, error) {
+	// Get callback, and root direct path from config.RedirectURL
 	url, err := url.Parse(config.RedirectURL)
 	if err != nil {
 		return nil, fmt.Errorf("server: can't parse redirect URL %q", config.RedirectURL)
 	}
+	callback := path.Base(url.Path)
+	dir := path.Dir(url.Path)
 
 	client := http.DefaultClient
 	if config.DexAddress != "" {
@@ -98,18 +102,26 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	router := mux.NewRouter()
+	handleWithMethodGet := func(p string, f func(http.ResponseWriter,
+		*http.Request)) {
+		router.HandleFunc(path.Join(dir, p), f).Methods(http.MethodGet)
+	}
 
 	// Authorization redirect callback from OAuth2 auth flow.
-	router.HandleFunc(url.Path, s.callback).Methods(http.MethodGet)
-	router.HandleFunc("/logout", s.logout).Methods(http.MethodGet)
-	router.HandleFunc("/refresh_token", bearerTokenHandler(s.refreshToken)).Methods(http.MethodGet)
-	//router.HandleFunc("/login", s.auth)
+	handleWithMethodGet(callback, s.callback)
+	handleWithMethodGet("logout", s.logout)
+	// : review refresh_token api
+	handleWithMethodGet("refresh_token", bearerTokenHandler(s.refreshToken))
+
+	// Handle health check
 	router.Handle("/healthz", s.healthCheck(context.Background()))
+
+	// Avoid root path being required twice from web browser
 	router.HandleFunc("/favicon.ico", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusNoContent)
 	})
 
-	// TODO: distinguish / and /login, and check ambassador-auth-oidc, when to redirect and when to return ok
+	// Auth check for root path
 	router.PathPrefix("/").HandlerFunc(s.auth)
 
 	s.mux = router

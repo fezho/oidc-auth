@@ -9,7 +9,6 @@ import (
 )
 
 type Config struct {
-	// The in-memory implementation has no config.
 	storage.SessionConfig `json:",inline"`
 }
 

@@ -45,7 +45,8 @@ func (c Config) Validate() error {
 		errMsg string
 	}{
 		{c.OIDC.Issuer == "", "no openID connect issuer specified"},
-		{c.OIDC.RedirectURL == "", "no openID connect redirect url specified"},
+		{c.OIDC.RedirectURL == "" || c.OIDC.RedirectURL[len(c.OIDC.RedirectURL)-1] == '/',
+			"no openID connect redirect url specified, or trailing slash is not allowed"},
 		{c.OIDC.ClientID == "", "no openID connect client id specified"},
 		{c.OIDC.ClientSecret == "", "no openID connect client secret specified"},
 		{c.OIDC.UsernameClaim == "", "no openID connect user name claim specified"},
@@ -86,7 +87,7 @@ type OIDC struct {
 	// URL of the OpenID Connect issuer
 	// Required.
 	Issuer string `json:"issuer"`
-	// Redirect URL is the callback URL for OAuth2 responses, should be auth-service's URL+callback_path
+	// Redirect URL is the callback URL for OAuth2 responses, format: [http/https]://host[:port]/[root-path/]callback-path
 	// Required.
 	RedirectURL string `json:"redirectURL"`
 	// OAuth2 client ID of this application

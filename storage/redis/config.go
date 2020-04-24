@@ -8,6 +8,8 @@ import (
 
 // Redis config for connecting to redis server.
 type Config struct {
+	storage.SessionConfig `json:",inline"`
+
 	// The host:port address of redis server.
 	Address string
 	// Optional password. Must match the password specified in the
@@ -17,10 +19,6 @@ type Config struct {
 	DB int
 	// key prefix for storing session
 	KeyPrefix string
-
-	storage.SessionConfig `json:",inline"`
-
-	// TODO: add timeout and tls?
 }
 
 func init() {

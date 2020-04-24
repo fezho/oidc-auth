@@ -66,9 +66,13 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	}
 
 	// initiate session storage
+	if strings.HasPrefix(c.OIDC.RedirectURL, "https") {
+		// set secureCookie if the scheme of the RedirectURL is https
+		c.Storage.Config.SetSecureCookie(true)
+	}
 	storage, err := c.Storage.Config.Open()
 	if err != nil {
-		return fmt.Errorf("failed to open session storage: %v", err)
+		return fmt.Errorf("oidc-auth: open session storage: %v", err)
 	}
 	defer storage.Close()
 

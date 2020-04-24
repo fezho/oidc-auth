@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-const authSessionName = "oidc-auth-session"
+const authSessionName = "oidc-auth.session"
 
-// TODO: check https://github.com/argoproj/argo-cd/blob/master/util/oidc/oidc.go
+// TODO: support implicit flow like https://github.com/argoproj/argo-cd/blob/master/util/oidc/oidc.go
 
 // callback is the handler responsible for exchanging the auth_code and retrieving an id_token.
 func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
@@ -33,18 +33,19 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
-		log.Errorf("failed to get session: %v", err)
+		log.Errorf("server: get session: %s", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
+	// Verify state
 	if nonce := session.Flashes("nonce"); len(nonce) == 0 || nonce[0].(string) != state {
 		deleteCookie(session, w, r)
 		http.Error(w, "access is unauthorized", http.StatusUnauthorized)
 		return
 	}
+
 	redirect := session.Flashes("redirect_to")
-	log.Infof("redirect: %v", redirect)
 
 	// Exchange the authorization code with {access, refresh, id}_token
 	oauth2Token, err := s.oauth2Config.Exchange(r.Context(), authCode)
@@ -72,7 +73,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Login validated with ID token, redirecting.")
 
 	if len(redirect) > 0 {
-		http.Redirect(w, r, redirect[0].(string), http.StatusFound)
+		http.Redirect(w, r, redirect[0].(string), http.StatusSeeOther)
 	}
 }
 
@@ -145,7 +146,7 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	// Check if user session is valid
 	session, err := s.store.Get(r, authSessionName)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("server: get session: %s", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -171,7 +172,7 @@ func (s *Server) doOIDCAuth(session *sessions.Session, w http.ResponseWriter, r 
 	session.AddFlash(r.URL.String(), "redirect_to")
 	session.AddFlash(nonce, "nonce")
 	if err := session.Save(r, w); err != nil {
-		log.Errorf("failed to save session: %v", err)
+		log.Errorf("server: save session: %s", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -191,30 +192,29 @@ func (s *Server) doOIDCAuth(session *sessions.Session, w http.ResponseWriter, r 
 func (s *Server) authenticateToken(token string, session *sessions.Session, w http.ResponseWriter, r *http.Request) bool {
 	verifier := s.provider.Verifier(&oidc.Config{ClientID: s.oauth2Config.ClientID})
 	idToken, err := verifier.Verify(r.Context(), token)
-	// TODO: fix this https://github.com/argoproj/argo-cd/pull/1114/files
 	if err != nil {
-		log.Errorf("verify token failed: %v", err)
+		log.Errorf("server: verify token: %s", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return false
 	}
 
 	var c claims
 	if err := idToken.Claims(&c); err != nil {
-		log.Errorf("parse oidc claims failed: %v", err)
+		log.Errorf("server: parse oidc claims: %s", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return false
 	}
 
 	username, err := c.extractUsername(s.usernameClaim)
 	if err != nil {
-		log.Errorf("failed to extract user name: %v", err)
+		log.Errorf("server: extract user name: %s", err)
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 	}
 	session.Values["user_name"] = username
 	if len(s.groupsClaim) > 0 {
 		groups, err := c.extractGroups(s.groupsClaim)
 		if err != nil {
-			log.Errorf("failed to extract user group: %v", err)
+			log.Errorf("server: extract user group: %s", err)
 			http.Error(w, "authentication failed", http.StatusUnauthorized)
 		}
 		session.Values["user_groups"] = groups
@@ -222,7 +222,7 @@ func (s *Server) authenticateToken(token string, session *sessions.Session, w ht
 
 	session.Values["id_token"] = token
 	if err := session.Save(r, w); err != nil {
-		log.Errorf("save session failed: %v", err)
+		log.Errorf("server: save session: %s", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return false
 	}
@@ -231,7 +231,7 @@ func (s *Server) authenticateToken(token string, session *sessions.Session, w ht
 
 // login sets user info into response header
 func (s *Server) login(session *sessions.Session, w http.ResponseWriter) {
-	// TODO: maybe this code should be optimized
+	// : maybe this code should be optimized
 	user, ok := session.Values["user_name"].(string)
 	if ok {
 		w.Header().Set("user_name", user)

@@ -9,6 +9,8 @@ import (
 )
 
 type Config struct {
+	storage.SessionConfig `json:",inline"`
+
 	// Path is the file path where the database file will be stored.
 	Path string
 	// BucketName represents the name of the bucket which contains sessions.
@@ -17,8 +19,6 @@ type Config struct {
 	// SweepFrequency is the frequency for running task to sweep expired sessions,
 	// if it's zero or less, means do not running sweep task.
 	SweepFrequency time.Duration
-
-	storage.SessionConfig `json:",inline"`
 }
 
 func init() {
