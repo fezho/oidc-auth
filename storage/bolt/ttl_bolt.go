@@ -3,8 +3,8 @@ package bolt
 import (
 	"bytes"
 	"context"
-	"github.com/boltdb/bolt"
 	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 	"time"
 )
 

@@ -3,7 +3,6 @@ module github.com/fezho/oidc-auth
 go 1.12
 
 require (
-	github.com/boltdb/bolt v1.3.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.3.5 // indirect
@@ -19,6 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.3
+	go.etcd.io/bbolt v1.3.4
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 )

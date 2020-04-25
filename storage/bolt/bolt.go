@@ -2,9 +2,9 @@ package bolt
 
 import (
 	"context"
-	"github.com/boltdb/bolt"
 	"github.com/fezho/oidc-auth/storage/internal"
 	"github.com/gorilla/sessions"
+	bolt "go.etcd.io/bbolt"
 	"time"
 )
 

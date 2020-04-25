@@ -3,9 +3,10 @@ package bolt
 import (
 	"context"
 	"fmt"
-	"github.com/boltdb/bolt"
-	"github.com/fezho/oidc-auth/storage"
 	"time"
+
+	"github.com/fezho/oidc-auth/storage"
+	bolt "go.etcd.io/bbolt"
 )
 
 type Config struct {
