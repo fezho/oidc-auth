@@ -59,6 +59,8 @@ func New(conn Conn, config SessionConfig) *Storage {
 			Path:   "/",
 			MaxAge: maxAge,
 			Secure: config.secureCookie,
+			// Cookies that persist server-side sessions don't need to be available to JavaScript
+			HttpOnly: true,
 		},
 		conn: conn,
 	}

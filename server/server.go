@@ -110,7 +110,7 @@ func NewServer(config Config) (*Server, error) {
 	// Authorization redirect callback from OAuth2 auth flow.
 	handleWithMethodGet(callback, s.callback)
 	handleWithMethodGet("logout", s.logout)
-	// : review refresh_token api
+	// TODO: review refresh_token api
 	handleWithMethodGet("refresh_token", bearerTokenHandler(s.refreshToken))
 
 	// Handle health check
