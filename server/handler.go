@@ -2,14 +2,15 @@ package server
 
 import (
 	"context"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const authSessionName = "oidc-auth.session"
@@ -55,7 +56,10 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "authentication failed", http.StatusUnauthorized)
 		return
 	}
-	session.Values["refresh-token"] = oauth2Token.RefreshToken
+
+	if s.offlineAccess {
+		session.Values["refresh-token"] = oauth2Token.RefreshToken
+	}
 
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {

@@ -3,9 +3,10 @@ package bolt
 import (
 	"bytes"
 	"context"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
-	"time"
 )
 
 func (c *boltConn) startSweeping(ctx context.Context, frequency time.Duration) {

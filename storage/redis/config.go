@@ -1,9 +1,11 @@
 package redis
 
 import (
-	"github.com/fezho/oidc-auth/storage"
-	"github.com/gomodule/redigo/redis"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
+
+	"github.com/fezho/oidc-auth/storage"
 )
 
 // Redis config for connecting to redis server.

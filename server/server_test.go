@@ -1,29 +1,31 @@
-package server
+package server_test
 
 import (
 	"fmt"
-	"github.com/fezho/oidc-auth/storage/memory"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/fezho/oidc-auth/server"
+	"github.com/fezho/oidc-auth/storage/memory"
 )
 
 var (
-	httpServer *httptest.Server
-	server     *Server
+	_httpServer *httptest.Server
+	_srv        *server.Server
 )
 
 func setup() error {
 	// add the following argument in go test command:
 	// --httptest.serve=127.0.0.1:8080
-	httpServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		server.ServeHTTP(w, r)
+	_httpServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_srv.ServeHTTP(w, r)
 	}))
 
 	store := memory.New()
 
-	config := Config{
+	config := server.Config{
 		IssuerURL:    "http://127.0.0.1:5556/dex",
 		RedirectURL:  "http://127.0.0.1:8080/callback",
 		ClientID:     "auth-service",
@@ -32,7 +34,7 @@ func setup() error {
 	}
 
 	var err error
-	server, err = NewServer(config)
+	_srv, err = server.NewServer(config)
 	if err != nil {
 		return err
 	}
@@ -45,7 +47,7 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "failed to setup test server: %v", err)
 		os.Exit(1)
 	}
-	defer httpServer.Close()
+	defer _httpServer.Close()
 
 	os.Exit(m.Run())
 }
@@ -56,10 +58,11 @@ func TestUnauthorizedRequest(t *testing.T) {
 			return http.ErrUseLastResponse
 		},
 	}
-	resp, err := client.Get(httpServer.URL)
+	resp, err := client.Get(_httpServer.URL)
 	if err != nil {
 		t.Fatal("failed to contact auth-service", err)
 	}
+	defer resp.Body.Close() // nolint
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("expected %v, got %v.", http.StatusFound, resp.StatusCode)
 	}

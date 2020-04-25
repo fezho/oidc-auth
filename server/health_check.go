@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/sessions"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"time"
+
+	"github.com/gorilla/sessions"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *Server) healthCheck(ctx context.Context) http.Handler {

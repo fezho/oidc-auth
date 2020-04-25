@@ -5,7 +5,10 @@ import (
 	"fmt"
 )
 
-type claims map[string]json.RawMessage
+type (
+	claims        map[string]json.RawMessage
+	stringOrArray []string
+)
 
 func (c claims) unmarshalClaim(name string, v interface{}) error {
 	val, ok := c[name]
@@ -29,22 +32,32 @@ func (c claims) extractUsername(usernameClaim string) (string, error) {
 	}
 
 	if usernameClaim == "email" {
-		// If the email_verified claim is present, ensure the email is valid.
-		// https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-		if hasEmailVerified := c.hasClaim("email_verified"); hasEmailVerified {
-			var emailVerified bool
-			if err := c.unmarshalClaim("email_verified", &emailVerified); err != nil {
-				return "", fmt.Errorf("oidc: parse 'email_verified' claim: %v", err)
-			}
-
-			// If the email_verified claim is present we have to verify it is set to `true`.
-			if !emailVerified {
-				return "", fmt.Errorf("oidc: email not verified")
-			}
+		if err := c.verifyEmail(); err != nil {
+			return "", err
 		}
 	}
 
 	return username, nil
+}
+
+// verifyEmail ensures email is valid if the email_verified claim is present
+// https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+func (c claims) verifyEmail() error {
+	if hasEmailVerified := c.hasClaim("email_verified"); !hasEmailVerified {
+		return nil
+	}
+
+	var emailVerified bool
+	if err := c.unmarshalClaim("email_verified", &emailVerified); err != nil {
+		return fmt.Errorf("oidc: parse 'email_verified' claim: %v", err)
+	}
+
+	// If the email_verified claim is present we have to verify it is set to `true`.
+	if !emailVerified {
+		return fmt.Errorf("oidc: email not verified")
+	}
+
+	return nil
 }
 
 func (c claims) extractGroups(groupsClaim string) ([]string, error) {
@@ -57,8 +70,6 @@ func (c claims) extractGroups(groupsClaim string) ([]string, error) {
 	}
 	return nil, nil
 }
-
-type stringOrArray []string
 
 func (s *stringOrArray) UnmarshalJSON(b []byte) error {
 	var a []string

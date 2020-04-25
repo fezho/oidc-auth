@@ -1,0 +1,66 @@
+run:
+  concurrency: 4
+  timeout: 2m
+  skip-dirs-use-default: true
+
+linters-settings:
+  golint:
+    min-confidence: 0.1
+  goimports:
+    local-prefixes: github.com/fezho/oidc-auth
+
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - misspell
+    - nakedret
+    - rowserrcheck
+    - scopelint
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+    - nestif
+    - testpackage
+    - gomodguard
+
+    # TODO: enable later
+    # - godot
+    # - wsl
+
+  # don't enable:
+  # - gochecknoglobals
+  # - gocognit
+  # - godox
+  # - maligned
+  # - prealloc
+  # - funlen
+  # - gomnd
+  # - gochecknoinits
+  # - lll
+

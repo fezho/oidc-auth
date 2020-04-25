@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fezho/oidc-auth/storage"
 	bolt "go.etcd.io/bbolt"
+
+	"github.com/fezho/oidc-auth/storage"
 )
 
 type Config struct {

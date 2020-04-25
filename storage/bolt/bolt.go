@@ -2,10 +2,12 @@ package bolt
 
 import (
 	"context"
-	"github.com/fezho/oidc-auth/storage/internal"
+	"time"
+
 	"github.com/gorilla/sessions"
 	bolt "go.etcd.io/bbolt"
-	"time"
+
+	"github.com/fezho/oidc-auth/storage/internal"
 )
 
 type boltConn struct {

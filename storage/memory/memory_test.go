@@ -1,12 +1,14 @@
-package memory
+package memory_test
 
 import (
-	"github.com/fezho/oidc-auth/storage/testutils"
 	"testing"
+
+	"github.com/fezho/oidc-auth/storage/memory"
+	"github.com/fezho/oidc-auth/storage/testutils"
 )
 
 func TestMemoryStorage(t *testing.T) {
-	cfg := &Config{SessionConfig: testutils.MockSessionConfig()}
+	cfg := &memory.Config{SessionConfig: testutils.MockSessionConfig()}
 	s, err := cfg.Open()
 	if err != nil {
 		t.Fatal("failed to open memory storage", err)

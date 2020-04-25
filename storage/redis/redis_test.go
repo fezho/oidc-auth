@@ -1,12 +1,14 @@
-package redis
+package redis_test
 
 import (
-	"github.com/fezho/oidc-auth/storage/testutils"
 	"testing"
+
+	"github.com/fezho/oidc-auth/storage/redis"
+	"github.com/fezho/oidc-auth/storage/testutils"
 )
 
 func TestRedisStorage(t *testing.T) {
-	cfg := &Config{
+	cfg := &redis.Config{
 		Address: "127.0.0.1:6379",
 		//Password:      "",
 		KeyPrefix:     "session",

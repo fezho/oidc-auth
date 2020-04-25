@@ -1,11 +1,13 @@
 package memory
 
 import (
-	"github.com/fezho/oidc-auth/storage"
-	"github.com/fezho/oidc-auth/storage/internal"
-	"github.com/gorilla/sessions"
 	"sync"
 	"time"
+
+	"github.com/gorilla/sessions"
+
+	"github.com/fezho/oidc-auth/storage"
+	"github.com/fezho/oidc-auth/storage/internal"
 )
 
 type Config struct {

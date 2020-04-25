@@ -7,7 +7,7 @@ import (
 )
 
 // NewDexRewriteURLRoundTripper creates a new DexRewriteURLRoundTripper
-func NewDexRewriteURLRoundTripper(dexAddr string, T http.RoundTripper) DexRewriteURLRoundTripper {
+func NewDexRewriteURLRoundTripper(dexAddr string, t http.RoundTripper) DexRewriteURLRoundTripper {
 	if !strings.HasPrefix(dexAddr, "http://") && !strings.HasPrefix(dexAddr, "https://") {
 		dexAddr = "http://" + dexAddr
 	}
@@ -15,7 +15,7 @@ func NewDexRewriteURLRoundTripper(dexAddr string, T http.RoundTripper) DexRewrit
 	dexURL, _ := url.Parse(dexAddr)
 	return DexRewriteURLRoundTripper{
 		DexURL: dexURL,
-		T:      T,
+		T:      t,
 	}
 }
 

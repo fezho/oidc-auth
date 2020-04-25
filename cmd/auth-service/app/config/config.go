@@ -3,13 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fezho/oidc-auth/storage"
-	_ "github.com/fezho/oidc-auth/storage/bolt"
-	_ "github.com/fezho/oidc-auth/storage/redis"
-	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/ghodss/yaml"
+
+	"github.com/fezho/oidc-auth/storage"
+	// Register config builders
+	_ "github.com/fezho/oidc-auth/storage/bolt"
+	_ "github.com/fezho/oidc-auth/storage/redis"
 )
 
 type Config struct {
@@ -81,13 +84,15 @@ type Web struct {
 
 // OIDC is the config for authorization handlers with oidc provider
 type OIDC struct {
-	// Dex server address, this is used when requests Dex in same cluster to avoid from api gateway or external load balancer.
+	// This is used when requests Dex in same cluster to avoid from api gateway or external load balancer.
 	// Optional.
+	// TODO: rename to IdPServer?
 	DexAddress string `json:"dexAddress"`
 	// URL of the OpenID Connect issuer
 	// Required.
 	Issuer string `json:"issuer"`
-	// Redirect URL is the callback URL for OAuth2 responses, format: [http/https]://host[:port]/[root-path/]callback-path
+	// Redirect URL is the callback URL for OAuth2 responses,
+	// format: [http/https]://host[:port]/[root-path/]callback-path
 	// Required.
 	RedirectURL string `json:"redirectURL"`
 	// OAuth2 client ID of this application

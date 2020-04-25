@@ -1,12 +1,14 @@
 package testutils
 
 import (
-	"github.com/fezho/oidc-auth/storage"
-	"github.com/gorilla/securecookie"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/gorilla/securecookie"
+
+	"github.com/fezho/oidc-auth/storage"
 )
 
 func RunTestNew(t *testing.T, s *storage.Storage) {

@@ -3,15 +3,17 @@ package app
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/fezho/oidc-auth/cmd/auth-service/app/config"
 	"github.com/fezho/oidc-auth/cmd/auth-service/app/options"
 	"github.com/fezho/oidc-auth/server"
 	"github.com/fezho/oidc-auth/version"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"net/http"
-	"os"
-	"strings"
 )
 
 func CommandServe() *cobra.Command {
@@ -96,6 +98,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 	}
 
 	errc := make(chan error, 3)
+
 	if c.Web.HTTP != "" {
 		log.Infof("listening (http) on %s", c.Web.HTTP)
 		go func() {
@@ -103,6 +106,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options) error 
 			errc <- fmt.Errorf("listening on %s failed: %v", c.Web.HTTP, err)
 		}()
 	}
+
 	if c.Web.HTTPS != "" {
 		httpsSrv := &http.Server{
 			Addr:    c.Web.HTTPS,

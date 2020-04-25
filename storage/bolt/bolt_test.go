@@ -1,14 +1,16 @@
-package bolt
+package bolt_test
 
 import (
-	"github.com/fezho/oidc-auth/storage/testutils"
 	"os"
 	"testing"
+
+	"github.com/fezho/oidc-auth/storage/bolt"
+	"github.com/fezho/oidc-auth/storage/testutils"
 )
 
 func TestBoltStorage(t *testing.T) {
 	path := "/tmp/data.db"
-	cfg := &Config{
+	cfg := &bolt.Config{
 		Path:          path,
 		BucketName:    "session",
 		SessionConfig: testutils.MockSessionConfig(),

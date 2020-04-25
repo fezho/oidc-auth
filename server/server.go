@@ -3,15 +3,16 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"path"
+
 	"github.com/coreos/go-oidc"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
-	"net/http"
-	"net/url"
-	"path"
 )
 
 type Config struct {
@@ -48,6 +49,7 @@ type Server struct {
 
 	usernameClaim string
 	groupsClaim   string
+	offlineAccess bool
 	authCodeOpts  []oauth2.AuthCodeOption
 
 	mux http.Handler
@@ -95,10 +97,7 @@ func NewServer(config Config) (*Server, error) {
 		store:         config.Store,
 		usernameClaim: config.UsernameClaim,
 		groupsClaim:   config.GroupsClaim,
-	}
-
-	if config.OfflineAccess {
-		s.authCodeOpts = append(s.authCodeOpts, oauth2.AccessTypeOffline)
+		offlineAccess: config.OfflineAccess,
 	}
 
 	router := mux.NewRouter()
@@ -110,8 +109,12 @@ func NewServer(config Config) (*Server, error) {
 	// Authorization redirect callback from OAuth2 auth flow.
 	handleWithMethodGet(callback, s.callback)
 	handleWithMethodGet("logout", s.logout)
-	// TODO: review refresh_token api
-	handleWithMethodGet("refresh_token", bearerTokenHandler(s.refreshToken))
+
+	if config.OfflineAccess {
+		s.authCodeOpts = append(s.authCodeOpts, oauth2.AccessTypeOffline)
+		// TODO: review refresh_token api
+		handleWithMethodGet("refresh_token", bearerTokenHandler(s.refreshToken))
+	}
 
 	// Handle health check
 	router.Handle("/healthz", s.healthCheck(context.Background()))

@@ -3,12 +3,14 @@ package storage
 import (
 	"encoding/base32"
 	"fmt"
-	"github.com/fezho/oidc-auth/storage/internal"
+	"net/http"
+	"strings"
+
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
+
+	"github.com/fezho/oidc-auth/storage/internal"
 )
 
 // Storage is a custom session store which provides an abstraction of
@@ -86,23 +88,23 @@ func (s *Storage) Get(r *http.Request, name string) (*sessions.Session, error) {
 // decode the session data twice, while Get() registers and reuses the same
 // decoded session after the first call. Get() calls New() internally if
 // there's no data in cache.
-func (s *Storage) New(r *http.Request, name string) (*sessions.Session, error) {
-	session := sessions.NewSession(s, name)
+func (s *Storage) New(r *http.Request, name string) (session *sessions.Session, err error) {
+	session = sessions.NewSession(s, name)
+	session.IsNew = true
 	opts := *s.options
 	session.Options = &opts
-	session.IsNew = true
-	var err error
-	if c, errCookie := r.Cookie(name); errCookie == nil {
-		err = securecookie.DecodeMulti(name, c.Value, &session.ID, s.codecs...)
-		if err == nil {
+
+	if c, errCookie := r.Cookie(name); errCookie == nil { // nolint
+		if err = securecookie.DecodeMulti(name, c.Value, &session.ID, s.codecs...); err == nil {
 			ok, err := s.conn.Load(session)
 			session.IsNew = !(err == nil && ok) // not new if no error and data available
 		} else {
 			// This means a cookie could not be decoded and validated,
 			// so we ignore this cookie and return a new session
 			// This usually is errTimestampExpired
+			// TODO: optimize here?
 			if scErr, ok := err.(securecookie.Error); ok {
-				if scErr.IsDecode() {
+				if !scErr.IsInternal() {
 					log.Warnf("storage: decode cookie error: %s", err)
 					err = nil
 				}
@@ -127,23 +129,27 @@ func (s *Storage) Save(r *http.Request, w http.ResponseWriter, session *sessions
 		if err := s.conn.Delete(session); err != nil {
 			return err
 		}
+
 		http.SetCookie(w, sessions.NewCookie(session.Name(), "", session.Options))
 		return nil
 	}
 
 	// encode id to use alphanumeric characters only for internal db usage.
 	if session.ID == "" {
-		session.ID = strings.TrimRight(
-			base32.StdEncoding.EncodeToString(
-				securecookie.GenerateRandomKey(32)), "=")
+		session.ID = strings.TrimRight(base32.StdEncoding.EncodeToString(
+			securecookie.GenerateRandomKey(32)),
+			"=")
 	}
+
 	if err := s.conn.Save(session); err != nil {
 		return err
 	}
+
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, s.codecs...)
 	if err != nil {
 		return err
 	}
+
 	http.SetCookie(w, sessions.NewCookie(session.Name(), encoded, session.Options))
 	return nil
 }

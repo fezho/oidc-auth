@@ -1,13 +1,16 @@
-package config
+package config_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
+	"github.com/kylelemons/godebug/pretty"
+
+	"github.com/fezho/oidc-auth/cmd/auth-service/app/config"
 	"github.com/fezho/oidc-auth/storage"
 	"github.com/fezho/oidc-auth/storage/bolt"
 	"github.com/fezho/oidc-auth/storage/redis"
-	"github.com/kylelemons/godebug/pretty"
-	"os"
-	"testing"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -28,11 +31,11 @@ logger:
   format: "json"
 `)
 
-	want := Config{
-		Web: Web{
+	want := config.Config{
+		Web: config.Web{
 			HTTP: "127.0.0.1:8080",
 		},
-		Storage: Storage{
+		Storage: config.Storage{
 			Type: "bolt",
 			Config: &bolt.Config{
 				Path:       "/tmp/data.bin",
@@ -43,13 +46,13 @@ logger:
 				},
 			},
 		},
-		Logger: Logger{
+		Logger: config.Logger{
 			Level:  "debug",
 			Format: "json",
 		},
 	}
 
-	c, err := LoadConfig(rawConfig)
+	c, err := config.LoadConfig(rawConfig)
 	if err != nil {
 		t.Fatalf("failed to load config: %v", err)
 	}
@@ -79,11 +82,11 @@ logger:
   format: "json"
 `)
 
-	want := Config{
-		Web: Web{
+	want := config.Config{
+		Web: config.Web{
 			HTTP: "127.0.0.1:8080",
 		},
-		Storage: Storage{
+		Storage: config.Storage{
 			Type: "redis",
 			Config: &redis.Config{
 				Address:   "127.0.0.1:6379",
@@ -95,13 +98,13 @@ logger:
 				},
 			},
 		},
-		Logger: Logger{
+		Logger: config.Logger{
 			Level:  "debug",
 			Format: "json",
 		},
 	}
 
-	c, err := LoadConfig(rawConfig)
+	c, err := config.LoadConfig(rawConfig)
 	if err != nil {
 		t.Fatalf("failed to load config: %v", err)
 	}
@@ -111,18 +114,18 @@ logger:
 }
 
 func TestValidConfiguration(t *testing.T) {
-	config := Config{
-		Web: Web{
+	cfg := config.Config{
+		Web: config.Web{
 			HTTP: "localhost:8000",
 		},
-		OIDC: OIDC{
+		OIDC: config.OIDC{
 			Issuer:        "dex.io/dex",
 			RedirectURL:   "auth-service:8080/callback",
 			ClientID:      "my-app",
 			ClientSecret:  "my-secret",
 			UsernameClaim: "email",
 		},
-		Storage: Storage{
+		Storage: config.Storage{
 			Type: "bolt",
 			Config: &bolt.Config{
 				Path:       "/tmp/data.bin",
@@ -133,19 +136,19 @@ func TestValidConfiguration(t *testing.T) {
 				},
 			},
 		},
-		Logger: Logger{
+		Logger: config.Logger{
 			Level:  "info",
 			Format: "json",
 		},
 	}
-	if err := config.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		t.Fatalf("this configuration should have been valid: %v", err)
 	}
 }
 
 func TestInValidConfiguration(t *testing.T) {
-	config := Config{}
-	err := config.Validate()
+	cfg := config.Config{}
+	err := cfg.Validate()
 	if err == nil {
 		t.Fatalf("this configuration should have been invalid: %v", err)
 	}
