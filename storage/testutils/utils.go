@@ -199,8 +199,8 @@ func RunTestMaxAge(t *testing.T, s *storage.Storage) {
 		// there's no cache in req, since Get is called first time
 		req.Header.Add("Cookie", cookies[0])
 		session, err = s.Get(req, "hello") // no cache
-		if err == nil {
-			t.Fatal("expected to get expired timestamp error, got nil")
+		if err != nil {
+			t.Fatalf("expected to get nil, got %v", err)
 		}
 	})
 }

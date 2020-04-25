@@ -12,13 +12,9 @@ DOCKER_IMAGE=$(DOCKER_REPO):$(VERSION)
 
 $( shell mkdir -p bin )
 
-user=$(shell id -u -n)
-group=$(shell id -g -n)
-
 export GOBIN=$(PWD)/bin
 
-LD_FLAGS=" -X $(REPO_PATH)/version.Version=$(VERSION)"
-LD_FLAGS=" \
+LD_FLAGS="\
     -X '${REPO_PATH}/version.GitSHA=${GitSHA}' \
     -X '${REPO_PATH}/version.Built=${Date}'   \
     -X '${REPO_PATH}/version.Version=${VERSION}'"

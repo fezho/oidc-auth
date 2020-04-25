@@ -116,10 +116,11 @@ func TestValidConfiguration(t *testing.T) {
 			HTTP: "localhost:8000",
 		},
 		OIDC: OIDC{
-			Issuer:       "dex.io/dex",
-			RedirectURL:  "auth-service:8080/callback",
-			ClientID:     "my-app",
-			ClientSecret: "my-secret",
+			Issuer:        "dex.io/dex",
+			RedirectURL:   "auth-service:8080/callback",
+			ClientID:      "my-app",
+			ClientSecret:  "my-secret",
+			UsernameClaim: "email",
 		},
 		Storage: Storage{
 			Type: "bolt",

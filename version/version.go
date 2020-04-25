@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	// Version shows the version of auth-service.
+	// Version shows the version of oidc-auth.
 	Version = "Not provided."
-	// GitSHA shows the git commit id of auth-service.
+	// GitSHA shows the git commit id of oidc-auth.
 	GitSHA = "Not provided."
 	// Built shows the built time of the binary.
 	Built = "Not provided."
