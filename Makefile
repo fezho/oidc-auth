@@ -21,7 +21,7 @@ LD_FLAGS="\
 
 
 # Dependency versions
-GOLANGCI_VERSION = 1.21.0
+GOLANGCI_VERSION = 1.25.0
 
 build: bin/auth-service
 

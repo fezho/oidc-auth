@@ -46,9 +46,9 @@ type healthChecker struct {
 func (h *healthChecker) runHealthCheck() {
 	t := time.Now()
 	err := checkStorageHealth(h.s.store)
-	passed := time.Now().Sub(t)
+	passed := time.Since(t)
 	if err != nil {
-		log.Errorf("storage health check failed: %v", err)
+		log.Errorf("server: storage health check failed: %s", err)
 	}
 
 	// Make sure to only hold the mutex to access the fields, and not while

@@ -132,7 +132,7 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Logout successfully."))
+	w.Write([]byte("Logout successfully.")) // nolint
 }
 
 func deleteCookie(session *sessions.Session, w http.ResponseWriter, r *http.Request) {

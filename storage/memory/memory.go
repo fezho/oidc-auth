@@ -53,7 +53,7 @@ func (m *memoryConn) Load(session *sessions.Session) (bool, error) {
 	return true, internal.Decode(value.data, session)
 }
 
-func (m memoryConn) Save(session *sessions.Session) error {
+func (m *memoryConn) Save(session *sessions.Session) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

@@ -198,7 +198,7 @@ func RunTestMaxAge(t *testing.T, s *storage.Storage) {
 		// round 2 use same req with Get method to get session
 		// there's no cache in req, since Get is called first time
 		req.Header.Add("Cookie", cookies[0])
-		session, err = s.Get(req, "hello") // no cache
+		_, err = s.Get(req, "hello") // no cache
 		if err != nil {
 			t.Fatalf("expected to get nil, got %v", err)
 		}
