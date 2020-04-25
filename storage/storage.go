@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/base32"
 	"fmt"
-	"github.com/fezho/oidc-auth-service/storage/internal"
+	"github.com/fezho/oidc-auth/storage/internal"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	log "github.com/sirupsen/logrus"

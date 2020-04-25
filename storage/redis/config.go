@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/fezho/oidc-auth-service/storage"
+	"github.com/fezho/oidc-auth/storage"
 	"github.com/gomodule/redigo/redis"
 	"time"
 )

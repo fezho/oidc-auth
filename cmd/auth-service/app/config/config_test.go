@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/fezho/oidc-auth-service/storage"
-	"github.com/fezho/oidc-auth-service/storage/bolt"
-	"github.com/fezho/oidc-auth-service/storage/redis"
+	"github.com/fezho/oidc-auth/storage"
+	"github.com/fezho/oidc-auth/storage/bolt"
+	"github.com/fezho/oidc-auth/storage/redis"
 	"github.com/kylelemons/godebug/pretty"
 	"os"
 	"testing"

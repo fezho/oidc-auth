@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/boltdb/bolt"
-	"github.com/fezho/oidc-auth-service/storage"
+	"github.com/fezho/oidc-auth/storage"
 	"time"
 )
 

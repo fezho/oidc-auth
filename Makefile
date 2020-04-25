@@ -1,4 +1,4 @@
-PROJ=oidc-auth-service
+PROJ=oidc-auth
 ORG_PATH=github.com/fezho
 REPO_PATH=$(ORG_PATH)/$(PROJ)
 export PATH := $(PWD)/bin:$(PATH)
@@ -7,7 +7,7 @@ GitSHA=`git rev-parse HEAD`
 Date=`date "+%Y-%m-%d %Z %H:%M:%S"`
 VERSION ?= $(shell ./scripts/git-version)
 
-DOCKER_REPO=docker.pkg.github.com/fezho/oidc-auth-service/auth-service
+DOCKER_REPO=docker.pkg.github.com/fezho/oidc-auth/auth-service
 DOCKER_IMAGE=$(DOCKER_REPO):$(VERSION)
 
 $( shell mkdir -p bin )

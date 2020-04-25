@@ -1,4 +1,4 @@
-module github.com/fezho/oidc-auth-service
+module github.com/fezho/oidc-auth
 
 go 1.12
 

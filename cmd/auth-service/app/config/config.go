@@ -3,9 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fezho/oidc-auth-service/storage"
-	_ "github.com/fezho/oidc-auth-service/storage/bolt"
-	_ "github.com/fezho/oidc-auth-service/storage/redis"
+	"github.com/fezho/oidc-auth/storage"
+	_ "github.com/fezho/oidc-auth/storage/bolt"
+	_ "github.com/fezho/oidc-auth/storage/redis"
 	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"

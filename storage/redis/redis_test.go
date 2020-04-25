@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/fezho/oidc-auth-service/storage/testutils"
+	"github.com/fezho/oidc-auth/storage/testutils"
 	"testing"
 )
 

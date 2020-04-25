@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/fezho/oidc-auth-service/storage/memory"
+	"github.com/fezho/oidc-auth/storage/memory"
 	"net/http"
 	"net/http/httptest"
 	"os"

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/fezho/oidc-auth-service/cmd/auth-service/app"
+	"github.com/fezho/oidc-auth/cmd/auth-service/app"
 )
 
 func main() {
@@ -13,4 +13,3 @@ func main() {
 	}
 }
 
-// TODO: rename to oidc-auth

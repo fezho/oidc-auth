@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"github.com/fezho/oidc-auth-service/storage"
-	"github.com/fezho/oidc-auth-service/storage/internal"
+	"github.com/fezho/oidc-auth/storage"
+	"github.com/fezho/oidc-auth/storage/internal"
 	"github.com/gorilla/sessions"
 	"sync"
 	"time"

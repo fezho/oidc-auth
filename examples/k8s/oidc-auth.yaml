@@ -42,7 +42,7 @@ spec:
         - name: regcred
       containers:
         - name: oidc-auth
-          image: docker.pkg.github.com/fezho/oidc-auth-service/auth-service:7a1a07bb33e01c72794d5f73c8da204b0ff57cc2-dirty
+          image: docker.pkg.github.com/fezho/oidc-auth/auth-service:7a1a07bb33e01c72794d5f73c8da204b0ff57cc2-dirty
           command: ["/usr/local/bin/auth-service", "--config", "/etc/oidc-auth/cfg/config.yaml"]
           ports:
             - name: http-api

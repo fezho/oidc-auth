@@ -3,7 +3,7 @@ package bolt
 import (
 	"context"
 	"github.com/boltdb/bolt"
-	"github.com/fezho/oidc-auth-service/storage/internal"
+	"github.com/fezho/oidc-auth/storage/internal"
 	"github.com/gorilla/sessions"
 	"time"
 )

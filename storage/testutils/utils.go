@@ -1,7 +1,7 @@
 package testutils
 
 import (
-	"github.com/fezho/oidc-auth-service/storage"
+	"github.com/fezho/oidc-auth/storage"
 	"github.com/gorilla/securecookie"
 	"net/http"
 	"net/http/httptest"

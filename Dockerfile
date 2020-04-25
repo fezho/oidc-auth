@@ -4,7 +4,7 @@ FROM golang:1.12-alpine
 #RUN apk add bash ca-certificates git gcc g++ libc-dev
 RUN apk add --no-cache --update alpine-sdk
 
-WORKDIR /go/src/github.com/fezho/oidc-auth-service
+WORKDIR /go/src/github.com/fezho/oidc-auth
 
 
 # Force the go compiler to use modules and set go proxy
